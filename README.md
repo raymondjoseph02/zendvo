@@ -1,4 +1,5 @@
 # Zendvo
+www.zendvo.com
 
 Zendvo is a full-stack gifting platform that enables users to send cash gifts that remain completely hidden until a predetermined unlock date and time. By using the Stellar blockchain, Zendvo transforms digital money transfers into memorable experiences filled with mystery and anticipation.
 

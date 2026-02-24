@@ -140,15 +140,15 @@ export async function verifyGiftOTP(giftId: string, otp: string) {
     };
   }
 
-  // Mark as confirmed
+  // Mark as OTP verified (ready for confirmation)
   await prisma.gift.update({
     where: { id: giftId },
     data: {
-      status: "confirmed",
+      status: "otp_verified",
       otpHash: null,
       otpExpiresAt: null,
     },
   });
 
-  return { success: true, message: "Gift confirmed successfully!" };
+  return { success: true, message: "Gift OTP verified successfully!" };
 }

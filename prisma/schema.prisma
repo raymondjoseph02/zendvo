@@ -30,6 +30,8 @@ model User {
   refreshTokens      RefreshToken[]
   sentGifts          Gift[]              @relation("SentGifts")
   receivedGifts      Gift[]              @relation("ReceivedGifts")
+  wallets            Wallet[]
+  notifications      Notification[]
 }
 
 model EmailVerification {
@@ -75,28 +77,59 @@ model RefreshToken {
 
 enum GiftStatus {
   pending_otp
+  otp_verified
   confirmed
+  completed
   sent
   failed
 }
 
 model Gift {
-  id           String     @id @default(uuid())
-  senderId     String
-  sender       User       @relation("SentGifts", fields: [senderId], references: [id])
-  recipientId  String
-  recipient    User       @relation("ReceivedGifts", fields: [recipientId], references: [id])
-  amount       Float
-  currency     String
-  message      String?
-  template     String?
-  status       GiftStatus @default(pending_otp)
-  otpHash      String?
-  otpExpiresAt DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id            String     @id @default(uuid())
+  senderId      String
+  sender        User       @relation("SentGifts", fields: [senderId], references: [id])
+  recipientId   String
+  recipient     User       @relation("ReceivedGifts", fields: [recipientId], references: [id])
+  amount        Float
+  currency      String
+  message       String?
+  template      String?
+  status        GiftStatus @default(pending_otp)
+  otpHash       String?
+  otpExpiresAt  DateTime?
+  transactionId String?    @unique
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@index([senderId])
   @@index([recipientId])
   @@index([status])
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  currency  String
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, currency])
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }

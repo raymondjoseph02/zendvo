@@ -127,7 +127,9 @@ describe("POST /api/gifts", () => {
 
     expect(response.status).toBe(422);
     expect(data.success).toBe(false);
-    expect(data.error).toBe("Amount must be a positive number within allowed limits");
+    expect(data.error).toBe(
+      "Amount must be a positive number within allowed limits",
+    );
   });
 
   it("should return 422 for invalid currency", async () => {

@@ -337,7 +337,10 @@ export async function sendGiftConfirmationOTP(
   }
 }
 
-function generateGiftConfirmationTemplate(otp: string, userName?: string): string {
+function generateGiftConfirmationTemplate(
+  otp: string,
+  userName?: string,
+): string {
   const name = userName || "Valued User";
 
   return `

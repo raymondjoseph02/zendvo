@@ -5,11 +5,23 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/lib/tokens";
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  COOKIE_OPTIONS,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+} from "@/lib/cookies";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { refreshToken } = body;
+    const body = await request.json().catch(() => ({}));
+    let refreshToken = (body as { refreshToken?: string }).refreshToken;
+
+    // Fallback: read from cookie if not in request body
+    if (!refreshToken) {
+      refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
+    }
 
     if (!refreshToken) {
       return NextResponse.json(
@@ -73,7 +85,7 @@ export async function POST(request: NextRequest) {
       }),
     ]);
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         success: true,
         data: {
@@ -83,6 +95,18 @@ export async function POST(request: NextRequest) {
       },
       { status: 200 },
     );
+
+    response.cookies.set(ACCESS_TOKEN_COOKIE, newAccessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    response.cookies.set(REFRESH_TOKEN_COOKIE, newRefreshToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error("[REFRESH_TOKEN_ERROR]", error);
     return NextResponse.json(

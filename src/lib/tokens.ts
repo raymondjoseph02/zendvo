@@ -33,6 +33,22 @@ export function verifyAccessToken(token: string): TokenPayload | null {
   }
 }
 
+export function verifyAccessTokenDetailed(
+  token: string,
+):
+  | { valid: true; payload: TokenPayload }
+  | { valid: false; expired: boolean } {
+  try {
+    const payload = jwt.verify(token, ACCESS_TOKEN_SECRET) as TokenPayload;
+    return { valid: true, payload };
+  } catch (error) {
+    return {
+      valid: false,
+      expired: error instanceof jwt.TokenExpiredError,
+    };
+  }
+}
+
 export function verifyRefreshToken(token: string): TokenPayload | null {
   try {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as TokenPayload;

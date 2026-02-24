@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 
 import { comparePassword } from "@/lib/auth";
+import {
+  ACCESS_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE,
+  COOKIE_OPTIONS,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+} from "@/lib/cookies";
 import { db } from "@/lib/db";
 import { refreshTokens, users } from "@/lib/db/schema";
 import { generateAccessToken, generateRefreshToken } from "@/lib/tokens";
@@ -132,13 +139,25 @@ export async function POST(request: NextRequest) {
       });
     });
 
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         access_token: accessToken,
         refresh_token: refreshToken,
       },
       { status: 200 },
     );
+
+    response.cookies.set(ACCESS_TOKEN_COOKIE, accessToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    response.cookies.set(REFRESH_TOKEN_COOKIE, refreshToken, {
+      ...COOKIE_OPTIONS,
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

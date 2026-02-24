@@ -149,7 +149,7 @@ describe("POST /api/gifts/verify-otp", () => {
     (prisma.gift.findUnique as jest.Mock).mockResolvedValue(mockGift);
     mockVerifyGiftOTP.mockResolvedValue({
       success: true,
-      message: "Gift confirmed successfully!",
+      message: "Gift OTP verified successfully!",
     });
 
     const request = createRequest({ giftId: "gift-123", otp: "123456" });
@@ -159,8 +159,8 @@ describe("POST /api/gifts/verify-otp", () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.message).toBe("Gift confirmed successfully!");
-    expect(data.data).toEqual({ giftId: "gift-123", status: "confirmed" });
+    expect(data.message).toBe("Gift OTP verified successfully!");
+    expect(data.data).toEqual({ giftId: "gift-123", status: "otp_verified" });
     expect(mockVerifyGiftOTP).toHaveBeenCalledWith(mockGift, "123456");
   });
 

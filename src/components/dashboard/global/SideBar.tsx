@@ -43,7 +43,7 @@ export const SideBar = ({ isOpen, onClose }: SideBarProps) => {
   const sidebarContent = (
     <>
       {/* Logo */}
-      <div className="mb-10 flex items-center justify-between">
+      <div className="mb-10 flex items-center justify-between sticky top-0 left-0 bg-white z-10 max-h-screen">
         <Image src="/logo.png" alt="Zendvo logo" width={130} height={40} />
         <button
           onClick={onClose}
@@ -170,9 +170,11 @@ export const SideBar = ({ isOpen, onClose }: SideBarProps) => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="h-screen hidden w-61 px-3 py-8 md:px-5 sticky top-0 left-0 lg:flex flex-col bg-white">
+      <aside className="h-screen hidden w-61 px-3 py-8 md:px-5 fixed top-0 left-0 lg:flex flex-col bg-white border-r border-gray-100 overflow-y-auto">
         {sidebarContent}
       </aside>
+      {/* Spacer for fixed sidebar */}
+      <div className="hidden lg:block w-61 shrink-0" />
 
       {/* Mobile Sidebar Overlay */}
       {isOpen && (

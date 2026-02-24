@@ -10,10 +10,12 @@
     "test": "jest"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.0",
     "@prisma/client": "6.19.2",
     "@stellar/stellar-sdk": "^14.4.3",
     "@tailwindcss/postcss": "^4.1.18",
     "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.1",
     "framer-motion": "^12.29.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.563.0",
@@ -42,6 +44,6 @@
     "eslint-config-next": "16.1.2",
     "jest": "^30.2.0",
     "ts-jest": "^29.4.6",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }

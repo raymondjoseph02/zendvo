@@ -185,11 +185,11 @@ describe("OTP Service", () => {
       const result = await verifyGiftOTP(validGift, "123456");
 
       expect(result.success).toBe(true);
-      expect(result.message).toBe("Gift confirmed successfully!");
+      expect(result.message).toBe("Gift OTP verified successfully!");
       expect(prisma.gift.update).toHaveBeenCalledWith({
         where: { id: "gift-123" },
         data: {
-          status: "confirmed",
+          status: "otp_verified",
           otpHash: null,
           otpExpiresAt: null,
           otpAttempts: 0,

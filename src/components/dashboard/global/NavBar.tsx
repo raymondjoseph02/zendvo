@@ -18,6 +18,7 @@ export const NavBar = ({ onMenuToggle }: NavBarProps) => {
             alt="Zendvo Logo"
             width={MobileLogo.width}
             height={MobileLogo.height}
+            blurDataURL={MobileLogo.blurDataURL}
             className="object-contain h-8 w-auto md:hidden"
           />
         </div>

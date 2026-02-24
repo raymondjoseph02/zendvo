@@ -1,23 +1,68 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { comparePassword } from "@/lib/auth";
-import { validateEmail, sanitizeInput } from "@/lib/validation";
-import { isRateLimited } from "@/lib/rate-limiter";
-import { generateAccessToken, generateRefreshToken } from "@/lib/tokens";
+import { eq } from "drizzle-orm";
 
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MINUTES = 15;
+import { comparePassword } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { refreshTokens, users } from "@/lib/db/schema";
+import { generateAccessToken, generateRefreshToken } from "@/lib/tokens";
+import { sanitizeInput, validateEmail } from "@/lib/validation";
+
+const FAILED_ATTEMPT_LIMIT = 5;
+const FAILED_ATTEMPT_WINDOW_MS = 60 * 1000;
+
+type FailedAttemptState = {
+  count: number;
+  windowStartMs: number;
+};
+
+const failedAttemptsByIp = new Map<string, FailedAttemptState>();
+
+const getClientIp = (request: NextRequest): string => {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "127.0.0.1";
+};
+
+const isIpRateLimited = (ip: string): boolean => {
+  const now = Date.now();
+  const attemptState = failedAttemptsByIp.get(ip);
+
+  if (!attemptState) {
+    return false;
+  }
+
+  if (now - attemptState.windowStartMs >= FAILED_ATTEMPT_WINDOW_MS) {
+    failedAttemptsByIp.delete(ip);
+    return false;
+  }
+
+  return attemptState.count >= FAILED_ATTEMPT_LIMIT;
+};
+
+const registerFailedAttempt = (ip: string): void => {
+  const now = Date.now();
+  const attemptState = failedAttemptsByIp.get(ip);
+
+  if (!attemptState || now - attemptState.windowStartMs >= FAILED_ATTEMPT_WINDOW_MS) {
+    failedAttemptsByIp.set(ip, { count: 1, windowStartMs: now });
+    return;
+  }
+
+  failedAttemptsByIp.set(ip, {
+    count: attemptState.count + 1,
+    windowStartMs: attemptState.windowStartMs,
+  });
+};
+
+const clearFailedAttempts = (ip: string): void => {
+  failedAttemptsByIp.delete(ip);
+};
 
 export async function POST(request: NextRequest) {
   try {
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-    if (isRateLimited(ip, 5, 15 * 60 * 1000)) {
+    const ip = getClientIp(request);
+
+    if (isIpRateLimited(ip)) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Too many login attempts. Please try again later.",
-        },
+        { error: "Too many failed login attempts. Please try again in 1 minute." },
         { status: 429 },
       );
     }
@@ -27,143 +72,75 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { success: false, error: "Email and password are required" },
+        { error: "Email and password are required" },
         { status: 400 },
       );
     }
 
-    const sanitizedEmail = sanitizeInput(email);
+    const sanitizedEmail = sanitizeInput(String(email)).toLowerCase();
     if (!validateEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid email format" }, { status: 400 });
     }
 
-    const user = (await prisma.user.findUnique({
-      where: { email: sanitizedEmail },
-    })) as any;
+    const userRows = await db
+      .select({
+        id: users.id,
+        email: users.email,
+        passwordHash: users.passwordHash,
+        role: users.role,
+      })
+      .from(users)
+      .where(eq(users.email, sanitizedEmail))
+      .limit(1);
+
+    const user = userRows[0];
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: "Invalid credentials" },
-        { status: 401 },
-      );
+      registerFailedAttempt(ip);
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
-    if (user.lockUntil && user.lockUntil > new Date()) {
-      const remainingMinutes = Math.ceil(
-        (user.lockUntil.getTime() - Date.now()) / (60 * 1000),
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Account is temporarily locked. Try again in ${remainingMinutes} minutes.`,
-        },
-        { status: 423 },
-      );
-    }
-
-    if (user.status === "unverified") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Account is unverified. Please verify your email.",
-        },
-        { status: 403 },
-      );
-    }
-
-    if (user.status === "suspended") {
-      return NextResponse.json(
-        { success: false, error: "Account is suspended." },
-        { status: 403 },
-      );
-    }
-
-    const isPasswordValid = await comparePassword(password, user.passwordHash);
+    const isPasswordValid = await comparePassword(String(password), user.passwordHash);
 
     if (!isPasswordValid) {
-      // Increment login attempts
-      const newAttempts = user.loginAttempts + 1;
-      const data: any = { loginAttempts: newAttempts };
-
-      if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-        data.lockUntil = new Date(
-          Date.now() + LOCK_DURATION_MINUTES * 60 * 1000,
-        );
-        data.loginAttempts = 0;
-      }
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data,
-      });
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid credentials",
-          details:
-            newAttempts >= MAX_LOGIN_ATTEMPTS
-              ? "Account locked due to too many failed attempts."
-              : undefined,
-        },
-        { status: 401 },
-      );
+      registerFailedAttempt(ip);
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
+
+    clearFailedAttempts(ip);
 
     const payload = { userId: user.id, email: user.email, role: user.role };
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
 
-    // Update User Activity and Store Refresh Token
-    await prisma.$transaction([
-      prisma.user.update({
-        where: { id: user.id },
-        data: {
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({
           lastLogin: new Date(),
           loginAttempts: 0,
           lockUntil: null,
-        } as any,
-      }),
-      prisma.refreshToken.create({
-        data: {
-          userId: user.id,
-          token: refreshToken,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-          deviceInfo: request.headers.get("user-agent"),
-        } as any,
-      }),
-    ]);
+        })
+        .where(eq(users.id, user.id));
 
-    console.log(
-      `[AUTH_AUDIT] Successful login for user: ${user.id} from IP: ${ip}`,
-    );
+      await tx.insert(refreshTokens).values({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        deviceInfo: request.headers.get("user-agent"),
+      });
+    });
 
     return NextResponse.json(
       {
-        success: true,
-        data: {
-          accessToken,
-          refreshToken,
-          user: {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            status: user.status,
-            lastLogin: new Date(),
-          },
-        },
+        access_token: accessToken,
+        refresh_token: refreshToken,
       },
       { status: 200 },
     );
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

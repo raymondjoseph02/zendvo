@@ -14,7 +14,7 @@ export const DashboardLayout = ({
   return (
     <div className="flex">
       <SideBar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-w-0">
         <NavBar onMenuToggle={() => setSidebarOpen(true)} />
         {children}
       </div>

@@ -1,0 +1,195 @@
+"use client";
+
+import {
+  LogOutDoor,
+  DashboardIcon,
+  GiftIcon,
+  WalletIcon,
+  ProfileIcon,
+  MoonIcon,
+  SettingsIcon,
+  HelpIcon,
+} from "@/assets/svg";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { X } from "lucide-react";
+
+const mainMenuItems = [
+  { name: "Dashboard", href: "/dashboard/sender", icon: DashboardIcon },
+  { name: "Gifts", href: "/dashboard/gifts", icon: GiftIcon, badge: 5 },
+  { name: "Wallet", href: "/dashboard/wallet", icon: WalletIcon },
+];
+
+const generalMenuItems = [
+  { name: "Profile", href: "/profile", icon: ProfileIcon },
+  { name: "Settings", href: "/settings", icon: SettingsIcon },
+  { name: "Help Desk", href: "/help", icon: HelpIcon },
+];
+
+interface SideBarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const SideBar = ({ isOpen, onClose }: SideBarProps) => {
+  const pathname = usePathname();
+  const [darkMode, setDarkMode] = useState(false);
+
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + "/");
+
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div className="mb-10 flex items-center justify-between">
+        <Image src="/logo.png" alt="Zendvo logo" width={130} height={40} />
+        <button
+          onClick={onClose}
+          className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <X size={20} className="text-gray-500" />
+        </button>
+      </div>
+
+      {/* Main Menu */}
+      <div className="mb-10">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          Main Menu
+        </p>
+        <nav className="flex flex-col gap-2">
+          {mainMenuItems.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                  active
+                    ? "bg-[#ECEFFE] text-[#5A42DE]"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon active={active} />
+                  <span className="text-sm font-medium">{item.name}</span>
+                </div>
+                {item.badge && (
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full ${
+                      active
+                        ? "bg-white/20 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* General */}
+      <div className="flex-1">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+          General
+        </p>
+        <nav className="flex flex-col gap-2">
+          {generalMenuItems.slice(0, 1).map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                  active
+                    ? "bg-[#ECEFFE] text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <item.icon />
+                <span className="text-sm font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+
+          {/* Dark Mode Toggle */}
+          <div className="flex items-center justify-between px-4 py-3 text-gray-600">
+            <div className="flex items-center gap-3">
+              <MoonIcon />
+              <span className="text-sm font-medium">Dark Mode</span>
+            </div>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`relative w-11 h-6 rounded-full transition-colors ${
+                darkMode ? "bg-[#5A42DE]" : "bg-gray-200"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                  darkMode ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {generalMenuItems.slice(1).map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
+                  active
+                    ? "bg-[#ECEFFE] text-white"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                <item.icon />
+                <span className="text-sm font-medium">{item.name}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* Logout */}
+      <button className="flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-gray-700 transition-colors">
+        <LogOutDoor />
+        <span className="text-sm font-medium">Logout</span>
+      </button>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="h-screen hidden w-61 px-3 py-8 md:px-5 sticky top-0 left-0 lg:flex flex-col bg-white">
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Sidebar Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Mobile Sidebar Drawer */}
+      <aside
+        className={`fixed top-0 left-0 h-screen w-72 px-5 py-8 flex flex-col bg-white z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+    </>
+  );
+};

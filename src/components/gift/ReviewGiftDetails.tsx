@@ -2,107 +2,107 @@
 
 import React from "react";
 import Button from "@/components/Button";
-import Card from "@/components/Card";
 
 interface ReviewGiftDetailsProps {
   recipientName: string;
   recipientPhone: string;
-  giftAmount: number;
-  message?: string;
-  unlockDate?: string;
-  onEdit: () => void;
+  amount: number;
+  processingFee: number;
+  hideAmountUntilUnlock: boolean;
+  anonymousUntilUnlock: boolean;
+  unlockLabel: string;
+  message: string;
   onProceed: () => void;
   isLoading?: boolean;
 }
 
+const rowLabel = "text-[12px] text-[#18181B]";
+const rowValue = "text-[12px] text-[#717182] text-right";
+
 const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
   recipientName,
   recipientPhone,
-  giftAmount,
+  amount,
+  processingFee,
+  hideAmountUntilUnlock,
+  anonymousUntilUnlock,
+  unlockLabel,
   message,
-  unlockDate,
-  onEdit,
   onProceed,
   isLoading = false,
 }) => {
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const total = amount + processingFee;
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Review Gift Details
-        </h1>
-        <p className="text-gray-600">
-          Please review your gift details before sending
+    <div className="w-full px-3 py-6 md:py-8">
+      <div className="w-full max-w-[360px] mx-auto rounded-3xl bg-[#FAFAFB] border border-[#EEEEF3] p-4 md:p-5">
+        <h2 className="text-[32px] leading-7 font-semibold text-[#18181B]">
+          Review Gift details
+        </h2>
+        <p className="text-[10px] leading-4 text-[#717182] mt-2">
+          Please review all details carefully, transactions once completed are
+          irreversible
         </p>
-      </div>
 
-      <Card className="mb-6">
-        <div className="space-y-6">
-          {/* Gift Amount */}
-          <div className="text-center py-4 border-b border-gray-100">
-            <p className="text-sm text-gray-500 mb-2">Gift Amount</p>
-            <p className="text-4xl font-bold text-[#6c5ce7]">
-              {formatAmount(giftAmount)}
+        <div className="mt-4 rounded-2xl border border-[#EEEEF3] bg-white p-3 space-y-2">
+          <div className="flex justify-between items-start">
+            <p className={rowLabel}>Recipient</p>
+            <div className={rowValue}>
+              <p>{recipientName}</p>
+              <p>{recipientPhone}</p>
+            </div>
+          </div>
+          <div className="flex justify-between">
+            <p className={rowLabel}>Amount</p>
+            <p className={rowValue}>${amount}</p>
+          </div>
+          <div className="flex justify-between">
+            <p className={rowLabel}>Processing Fee</p>
+            <p className={rowValue}>${processingFee}</p>
+          </div>
+          <div className="flex justify-between items-end border-t border-[#EEEEF3] pt-2">
+            <p className={rowLabel}>Total Amount</p>
+            <p className="text-[40px] leading-8 text-[#18181B] font-medium">
+              ${total}
             </p>
           </div>
-
-          {/* Recipient Details */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Recipient</p>
-                <p className="font-semibold text-gray-900">{recipientName}</p>
-                <p className="text-sm text-gray-600">{recipientPhone}</p>
-              </div>
-              <button
-                onClick={onEdit}
-                className="text-sm text-[#6c5ce7] hover:underline font-medium"
-                disabled={isLoading}
-              >
-                Edit
-              </button>
-            </div>
-
-            {/* Unlock Date */}
-            {unlockDate && (
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Unlock Date</p>
-                <p className="font-medium text-gray-900">{unlockDate}</p>
-              </div>
-            )}
-
-            {/* Message */}
-            {message && (
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Message</p>
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {message}
-                </p>
-              </div>
-            )}
+          <div className="flex justify-between pt-2 border-t border-[#EEEEF3]">
+            <p className={rowLabel}>Amount Privacy</p>
+            <p className={rowValue}>
+              {hideAmountUntilUnlock ? "Hide amount sent" : "Visible"}
+            </p>
+          </div>
+          <div className="flex justify-between">
+            <p className={rowLabel}>Sender Privacy</p>
+            <p className={rowValue}>
+              {anonymousUntilUnlock ? "Anonymous" : "Identified"}
+            </p>
+          </div>
+          <div className="flex justify-between">
+            <p className={rowLabel}>Unlock date and time</p>
+            <p className={rowValue}>{unlockLabel}</p>
+          </div>
+          <div className="space-y-1">
+            <p className={rowLabel}>Message for the sender</p>
+            <p className="text-[12px] text-[#717182]">{message || "-"}</p>
           </div>
         </div>
-      </Card>
 
-      <Button
-        variant="primary"
-        size="lg"
-        className="w-full"
-        onClick={onProceed}
-        isLoading={isLoading}
-        disabled={isLoading}
-      >
-        {isLoading ? "Processing..." : "Proceed to Payment"}
-      </Button>
+        <p className="text-[10px] text-[#717182] mt-4">
+          By proceeding, you have accepted{" "}
+          <span className="text-[#5A42DE] font-medium">Zendvo terms</span> and{" "}
+          <span className="text-[#5A42DE] font-medium">Privacy Policy</span>
+        </p>
+
+        <Button
+          onClick={onProceed}
+          isLoading={isLoading}
+          disabled={isLoading}
+          className="w-full mt-3 h-8 rounded-[8px] bg-[#5A42DE] hover:bg-[#4E37CC] text-[11px]"
+        >
+          Proceed
+        </Button>
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { X, AlertCircle, ThumbsUp } from "lucide-react";
 
 interface AlertProps {
     type: "success" | "error";
@@ -12,9 +12,9 @@ const Alert: React.FC<AlertProps> = ({ type, message, onClose }) => {
 
     return (
         <div
-            className={`flex items-center justify-between p-4 rounded-lg border-l-4 shadow-sm mb-6 ${isError
-                    ? "bg-red-50 border-red-500"
-                    : "bg-green-50 border-green-500"
+            className={`flex items-center justify-between p-4 rounded-lg shadow-sm mb-6 ${isError
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-green-50 border border-green-200"
                 }`}
         >
             <div className="flex items-center gap-3">
@@ -23,11 +23,11 @@ const Alert: React.FC<AlertProps> = ({ type, message, onClose }) => {
                         <AlertCircle className="w-4 h-4 text-red-500" />
                     </div>
                 ) : (
-                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <ThumbsUp className="w-4 h-4 text-white" />
                     </div>
                 )}
-                <span className={`text-sm font-medium ${isError ? "text-gray-900" : "text-green-800"}`}>
+                <span className={`text-sm font-medium ${isError ? "text-red-800" : "text-green-800"}`}>
                     {message}
                 </span>
             </div>

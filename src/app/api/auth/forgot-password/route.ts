@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { validateEmail, sanitizeInput } from "@/lib/validation";
 import { isRateLimited } from "@/lib/rate-limiter";
 import { sendForgotPasswordEmail } from "@/server/services/emailService";
+import { randomBytes } from "crypto";
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,17 +43,28 @@ export async function POST(request: NextRequest) {
     });
 
     if (user) {
-      const token = crypto.randomUUID();
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const token = randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-      await prisma.passwordReset.create({
-        data: {
-          userId: user.id,
-          token,
-          expiresAt,
-          ipAddress: ip,
-        },
-      });
+      await prisma.$transaction([
+        prisma.passwordReset.updateMany({
+          where: {
+            userId: user.id,
+            usedAt: null,
+          },
+          data: {
+            usedAt: new Date(),
+          },
+        }),
+        prisma.passwordReset.create({
+          data: {
+            userId: user.id,
+            token,
+            expiresAt,
+            ipAddress: ip,
+          },
+        }),
+      ]);
 
       sendForgotPasswordEmail(user.email, token, user.name || undefined).catch(
         (err) => console.error("[FORGOT_PASSWORD_EMAIL_ERROR]", err),
@@ -77,9 +89,4 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[FORGOT_PASSWORD_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
-    );
-  }
-}
+   

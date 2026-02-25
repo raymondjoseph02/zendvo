@@ -1,3 +1,4 @@
 import { SignupSuccessModal } from "./SignupSuccessModal";
+import { EmailVerificationSuccess } from "./EmailVerificationSuccess";
 
-export { SignupSuccessModal };
+export { SignupSuccessModal, EmailVerificationSuccess };

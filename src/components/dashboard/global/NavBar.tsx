@@ -3,12 +3,27 @@ import { ArrowLeft } from "lucide-react";
 import UserProfile from "@/assets/images/user.png";
 import MobileLogo from "../../../assets/images/zendo-logo.png";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 
 interface NavBarProps {
   onMenuToggle: () => void;
 }
 
 export const NavBar = ({ onMenuToggle }: NavBarProps) => {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const titleByRoute: Record<string, string> = {
+    "/dashboard": "Dashboard",
+    "/dashboard/sender": "Sender",
+    "/dashboard/recipient": "Recipient",
+    "/dashboard/gifts": "Send Gift",
+    "/dashboard/wallet": "Wallet",
+  };
+
+  const pageTitle = titleByRoute[pathname] || "Dashboard";
+  const canGoBack = pathname !== "/dashboard";
+
   return (
     <header className="bg-white w-full sticky top-0 left-0 z-10 ">
       <nav className="py-4.5 px-5  lg:pl-0 pr-6 flex items-center justify-between ">
@@ -22,14 +37,23 @@ export const NavBar = ({ onMenuToggle }: NavBarProps) => {
             className="object-contain h-8 w-auto md:hidden"
           />
         </div>
-        <button className="md:flex items-center gap-3  text-[#71717A] cursor-pointer hover:bg-gray-50 rounded-xl transition-colors hidden">
+        <button
+          onClick={() => {
+            if (canGoBack) {
+              router.back();
+            } else {
+              router.push("/dashboard");
+            }
+          }}
+          className="md:flex items-center gap-3  text-[#71717A] cursor-pointer hover:bg-gray-50 rounded-xl transition-colors hidden"
+        >
           <div className="bg-[#F7F7F8] size-8 rounded-full flex items-center justify-center ">
-            <ArrowLeft />
+            <ArrowLeft size={16} />
           </div>
-          <span>Dashboard</span>
+          <span>{pageTitle}</span>
         </button>
 
-        <p className="text-[#71717A] md:hidden">Dashboard</p>
+        <p className="text-[#71717A] md:hidden">{pageTitle}</p>
 
         <div className="lg:flex items-center justify-center  gap-4.5 hidden">
           <div className="size-8 bg-[#F7F7F8] rounded-full flex items-center justify-center">

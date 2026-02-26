@@ -5,12 +5,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import PackageIcon from "@/assets/images/package.png";
+import { KycCard } from "./KycCard";
+import { GiftInfoCard } from "./GiftInfoCard";
 export const GiftCard = () => {
   const [activeTab, setActiveTab] = useState(1);
   const tabs = [
     { id: 1, name: "gift received" },
     { id: 2, name: "gift send" },
   ];
+  const gifts = [
+    // {
+    //   id: "NBV890QWE234",
+    //   type: "Gift Received",
+    //   amount: "$200",
+    //   dateTIme: "Dec 12, 2023 10:00 AM",
+    //   status: "Completed",
+    // },
+    // {
+    //   id: "POI456JKL789",
+    //   type: "Gift Sent",
+    //   amount: "$50",
+    //   dateTIme: "Dec 05, 2023 04:30 PM",
+    //   status: "Pending",
+    // },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="lg:flex gap-5  hidden">
@@ -33,39 +52,46 @@ export const GiftCard = () => {
           textColor="text-[#5A42DE]"
         />
       </div>
-      <div className="p-6 bg-white w-full  rounded-4xl space-y-4">
-        <div className="flex items-center justify-between">
+      {gifts.length > 0 ? (
+        <div className="p-6 bg-white w-full  rounded-4xl space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              {tabs.map((tab) => {
+                return (
+                  <button
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-1 px-2 min-w-31.75 capitalize rounded-full transition-all ease-in-out duration-300 cursor-pointer ${
+                      activeTab === tab.id
+                        ? "bg-[#5A42DE] text-white"
+                        : "bg-gray-100 text-gray-700"
+                    }`}
+                    key={tab.id}
+                  >
+                    {tab.name}
+                  </button>
+                );
+              })}
+            </div>
+            <Link
+              href=""
+              className="flex items-center justify-center gap-1 text-[#5A42DE] text-xs leading-3 "
+            >
+              See all <ChevronRight className="size-3.5" />
+            </Link>
+          </div>
           <div>
-            {tabs.map((tab) => {
-              return (
-                <button
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-1 px-2 min-w-31.75 capitalize rounded-full transition-all ease-in-out duration-300 cursor-pointer ${
-                    activeTab === tab.id
-                      ? "bg-[#5A42DE] text-white"
-                      : "bg-gray-100 text-gray-700"
-                  }`}
-                  key={tab.id}
-                >
-                  {tab.name}
-                </button>
-              );
-            })}
-          </div>
-          <Link
-            href=""
-            className="flex items-center justify-center gap-1 text-[#5A42DE] text-xs leading-3 "
-          >
-            See all <ChevronRight className="size-3.5" />
-          </Link>
-        </div>
-        <div>
-          <div className="flex gap-5.75 flex-col lg:flex-row">
-            <GiftReleaseCard />
-            <GiftReleaseCard />
+            <div className="flex gap-5.75 flex-col lg:flex-row">
+              <GiftReleaseCard />
+              <GiftReleaseCard />
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex gap-5 flex-col lg:flex-row">
+          <GiftInfoCard />
+          <KycCard />
+        </div>
+      )}
     </div>
   );
 };

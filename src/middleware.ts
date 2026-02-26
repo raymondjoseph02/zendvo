@@ -66,23 +66,23 @@ async function handleDashboardRoute(
   if (accessToken) {
     const result = verifyAccessTokenDetailed(accessToken);
 
-    // if (result.valid) {
-    //   return injectUserHeaders(request, result.payload);
-    // }
+    if (result.valid) {
+      return injectUserHeaders(request, result.payload);
+    }
 
     // Case 2: Access token expired + refresh token exists — attempt refresh
-    // if (result.expired && refreshToken) {
-    //   return attemptTokenRefresh(request, refreshToken);
-    // }
+    if (result.expired && refreshToken) {
+      return attemptTokenRefresh(request, refreshToken);
+    }
   }
 
   // Case 3: No access token but refresh token exists — attempt refresh
-  // if (!accessToken && refreshToken) {
-  //   return attemptTokenRefresh(request, refreshToken);
-  // }
+  if (!accessToken && refreshToken) {
+    return attemptTokenRefresh(request, refreshToken);
+  }
 
   // Case 4: No valid tokens — redirect to login
-  // return redirectToLogin(request);
+  return redirectToLogin(request);
 }
 
 async function attemptTokenRefresh(

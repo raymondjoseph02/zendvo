@@ -17,7 +17,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   return (
     <div className="min-h-screen flex flex-col   lg:flex-row">
       <div className="w-full lg:w-1/2 flex flex-col relative bg-white min-h-screen lg:min-h-0">
-        <div className="w-full pt-8 pl-5 md:pl-40 lg:pl-20 xl:pl-38 lg:pt-18 xl:pt-20">
+        <div className="w-full pt-8 px-8 md:px-16 lg:px-24 xl:px-44 lg:pt-16 xl:pt-20">
           <Link href="/" className="inline-flex items-center gap-2">
             <Image
               src={LogoImage.src}
@@ -30,14 +30,12 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           </Link>
         </div>
 
-        <div className="flex-1 flex flex-col lg:items-center justify-center px-6 lg:px-16 pb-12">
-          <div className="w-full max-w-110 flex-1 flex flex-col justify-center">
-            {children}
-          </div>
+        <div className="flex-1 flex flex-col justify-center px-8 md:px-16 lg:px-24 xl:px-44 pb-20 mt-12 lg:mt-0">
+          <div className="w-full max-w-[400px]">{children}</div>
         </div>
 
-        <div className="w-full pb-6 lg:pb-0 lg:absolute lg:bottom-6 lg:left-1/2 lg:-translate-1/2">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[13px] text-[#717182]">
+        <div className="w-full pb-6 lg:pb-8 lg:absolute lg:bottom-0 lg:left-0 lg:px-24 xl:px-44">
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-4 gap-y-2 text-[13px] text-[#717182]">
             <Link
               href="/help"
               className="hover:text-[#030213] transition-colors"

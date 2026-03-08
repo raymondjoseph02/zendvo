@@ -40,12 +40,12 @@ function LoginForm() {
   };
 
   return (
-    <div className="space-y-7 max-w-sm">
-      <div className="gap-0.5 flex flex-col">
-        <h1 className="text-lg md:text-xl font-bold text-[#18181B] leading-tight">
-          Login.
+    <div className="space-y-8 w-full">
+      <div className="gap-2 flex flex-col">
+        <h1 className="text-[32px] font-bold text-[#18181B] leading-tight tracking-tight">
+          Login
         </h1>
-        <p className="text-xs text-[#717182]">
+        <p className="text-[13px] font-medium text-[#717182]">
           To start receiving cash gifts
         </p>
       </div>
@@ -68,11 +68,11 @@ function LoginForm() {
           autoComplete="email"
         />
 
-        <div className="space-y-1">
+        <div className="space-y-3">
           <PasswordInput
             id="password"
             label="Password"
-            placeholder="••••••••••••••"
+            placeholder="••••••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -81,30 +81,29 @@ function LoginForm() {
           <div className="flex justify-end">
             <Link
               href="/forgot-password"
-              className="text-sm font-medium text-[#6c5ce7] hover:text-[#5f51d8] transition-colors"
+              className="text-[13px] font-bold text-[#5A45FE] hover:text-[#4b35e5] transition-colors"
             >
               Forgot password?
             </Link>
           </div>
         </div>
 
-        <div className="pt-1">
+        <div className="pt-2">
           <Button
             type="submit"
             variant="primary"
-            size="md"
-            className="w-full rounded-lg text-sm font-medium"
+            className="w-full rounded-lg text-[15px] font-medium h-12"
             isLoading={isSubmitting}
           >
             Login
           </Button>
         </div>
 
-        <p className="text-center text-xs text-[#717182] pt-1">
+        <p className="text-center text-[13px] font-medium text-[#18181B] pt-2">
           Not registered yet?{" "}
           <Link
             href="/auth/sign-up"
-            className="text-[#6c5ce7] hover:text-[#5f51d8] font-medium transition-colors"
+            className="text-[#5A45FE] font-bold transition-colors ml-1 hover:text-[#4b35e5]"
           >
             Sign Up
           </Link>

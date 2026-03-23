@@ -15,6 +15,7 @@ const PROTECTED_API_ROUTES = [
   "/api/user",
   "/api/auth/logout",
   "/api/auth/reset-password",
+  "/api/auth/revoke",
   "/api/gifts",
   "/api/dashboard",
 ];

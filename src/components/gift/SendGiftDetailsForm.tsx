@@ -44,6 +44,8 @@ export type SendGiftDetailsFormProps = {
   value?: GiftDetailsFormValues;
   onChange?: (val: GiftDetailsFormValues) => void;
   onContinue?: () => void;
+  showOptionsOnly?: boolean;
+  onBack?: () => void;
 };
 
 export default function SendGiftDetailsForm({
@@ -52,10 +54,12 @@ export default function SendGiftDetailsForm({
   value,
   onChange,
   onContinue,
+  showOptionsOnly = false,
+  onBack,
 }: SendGiftDetailsFormProps) {
   // Recipient State
   const [countryCode, setCountryCode] = useState("+234");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState(value?.recipientPhone || "");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [recipient, setRecipient] = useState<{
     name: string;
@@ -64,18 +68,45 @@ export default function SendGiftDetailsForm({
   } | null>(null);
 
   // Amount State
-  const [amount, setAmount] = useState<string>("");
+  const [amount, setAmount] = useState(value?.amount || "");
 
   // Delivery Date & Time State
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState(value?.unlockDate || "");
+  const [time, setTime] = useState(value?.unlockTime || "");
   const [dateTimeError, setDateTimeError] = useState("");
 
   // Options State
-  const [hideAmount, setHideAmount] = useState(false);
-  const [message, setMessage] = useState("");
+  const [hideAmount, setHideAmount] = useState(value?.hideAmountUntilUnlock || false);
+  const [message, setMessage] = useState(value?.message || "");
 
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync with parent component values
+  useEffect(() => {
+    if (value) {
+      setPhoneNumber(value.recipientPhone || "");
+      setAmount(value.amount || "");
+      setDate(value.unlockDate || "");
+      setTime(value.unlockTime || "");
+      setHideAmount(value.hideAmountUntilUnlock || false);
+      setMessage(value.message || "");
+    }
+  }, [value]);
+
+  // Update parent component when local state changes
+  useEffect(() => {
+    if (onChange && value) {
+      onChange({
+        ...value,
+        recipientPhone: phoneNumber,
+        amount,
+        unlockDate: date,
+        unlockTime: time,
+        hideAmountUntilUnlock: hideAmount,
+        message,
+      });
+    }
+  }, [phoneNumber, amount, date, time, hideAmount, message, onChange, value]);
 
   // 1. Mock Recipient Lookup Logic
   useEffect(() => {
@@ -108,8 +139,9 @@ export default function SendGiftDetailsForm({
   }, [date, time]);
 
   // 3. Validation for the Continue Button
-  const isFormValid =
-    recipient !== null && amount !== "" && Number(amount) > 0 && !dateTimeError;
+  const isFormValid = showOptionsOnly 
+    ? !dateTimeError // Options step only needs date/time validation
+    : recipient !== null && amount !== "" && Number(amount) > 0 && !dateTimeError;
 
   const handleContinue = () => {
     setIsLoading(true);
@@ -124,85 +156,92 @@ export default function SendGiftDetailsForm({
     <div className="w-full flex justify-center px-4 py-6 md:py-10">
       <div className="w-full max-w-[400px] rounded-3xl bg-[#FAFAFB] border border-[#EEEEF3] p-5 md:p-6 shadow-sm">
         <h2 className="text-[24px] md:text-[28px] font-semibold text-[#18181B]">
-          Send a Gift
+          {showOptionsOnly ? "Gift Options" : "Send a Gift"}
         </h2>
         <p className="text-[13px] text-[#717182] mt-1.5 mb-6">
-          Enter recipient details and amount to send a gift.
+          {showOptionsOnly 
+            ? "Configure delivery and wrapper options for your gift."
+            : "Enter recipient details and amount to send a gift."
+          }
         </p>
 
         <div className="space-y-5">
-          {/* Recipient Phone Input */}
-          <div>
-            <PhoneInput
-              label="Recipient Phone Number"
-              placeholder="e.g. 812 345 6789"
-              countryCode={countryCode}
-              onCountryCodeChange={setCountryCode}
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-            />
-
-            {/* Contact Card (Renders when recipient is found) */}
-            {recipient && (
-              <div className="mt-3 flex items-center gap-3 p-3 bg-white border border-[#E5E7EB] rounded-xl shadow-sm transition-all animate-in fade-in slide-in-from-top-2">
-                <Image
-                  src={recipient.avatar}
-                  alt="Recipient avatar"
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover border border-[#EEEEF3]"
-                />
-                <div className="flex flex-col">
-                  <span className="text-[14px] font-semibold text-[#18181B] leading-none">
-                    {recipient.name}
-                  </span>
-                  <span className="text-[12px] text-[#717182] mt-1">
-                    {recipient.username}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Amount Selection */}
-          <div>
-            <label className="block text-xs text-[#9CA3AF] mb-2 px-1">
-              Gift Amount (USD)
-            </label>
-
-            {/* Custom Amount Input */}
-            <div className="relative flex items-center mb-3">
-              <span className="absolute left-4 text-[#18181B] font-medium text-lg">
-                $
-              </span>
-              <input
-                type="number"
-                min="1"
-                placeholder="Enter custom amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="w-full pl-8 pr-4 py-3 rounded-lg bg-white border border-[#E5E7EB] text-[#030213] placeholder:text-[#C6C7CF] focus:outline-none focus:ring-2 focus:ring-[#5A42DE]/20 focus:border-[#5A42DE] transition-all"
+          {/* Recipient Phone Input - Only show in details step */}
+          {!showOptionsOnly && (
+            <div>
+              <PhoneInput
+                label="Recipient Phone Number"
+                placeholder="e.g. 812 345 6789"
+                countryCode={countryCode}
+                onCountryCodeChange={setCountryCode}
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
               />
-            </div>
 
-            {/* Preset Amount Grid */}
-            <div className="grid grid-cols-3 gap-2">
-              {PRESET_AMOUNTS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  onClick={() => setAmount(String(preset))}
-                  className={`py-2 rounded-lg text-sm font-medium transition-colors border ${
-                    amount === String(preset)
-                      ? "bg-[#F1EDFF] border-[#5A42DE] text-[#5A42DE]"
-                      : "bg-white border-[#E5E7EB] text-[#717182] hover:bg-gray-50"
-                  }`}
-                >
-                  ${preset}
-                </button>
-              ))}
+              {/* Contact Card (Renders when recipient is found) */}
+              {recipient && (
+                <div className="mt-3 flex items-center gap-3 p-3 bg-white border border-[#E5E7EB] rounded-xl shadow-sm transition-all animate-in fade-in slide-in-from-top-2">
+                  <Image
+                    src={recipient.avatar}
+                    alt="Recipient avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover border border-[#EEEEF3]"
+                  />
+                  <div className="flex flex-col">
+                    <span className="text-[14px] font-semibold text-[#18181B] leading-none">
+                      {recipient.name}
+                    </span>
+                    <span className="text-[12px] text-[#717182] mt-1">
+                      {recipient.username}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Amount Selection - Only show in details step */}
+          {!showOptionsOnly && (
+            <div>
+              <label className="block text-xs text-[#9CA3AF] mb-2 px-1">
+                Gift Amount (USD)
+              </label>
+
+              {/* Custom Amount Input */}
+              <div className="relative flex items-center mb-3">
+                <span className="absolute left-4 text-[#18181B] font-medium text-lg">
+                  $
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Enter custom amount"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full pl-8 pr-4 py-3 rounded-lg bg-white border border-[#E5E7EB] text-[#030213] placeholder:text-[#C6C7CF] focus:outline-none focus:ring-2 focus:ring-[#5A42DE]/20 focus:border-[#5A42DE] transition-all"
+                />
+              </div>
+
+              {/* Preset Amount Grid */}
+              <div className="grid grid-cols-3 gap-2">
+                {PRESET_AMOUNTS.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setAmount(String(preset))}
+                    className={`py-2 rounded-lg text-sm font-medium transition-colors border ${
+                      amount === String(preset)
+                        ? "bg-[#F1EDFF] border-[#5A42DE] text-[#5A42DE]"
+                        : "bg-white border-[#E5E7EB] text-[#717182] hover:bg-gray-50"
+                    }`}
+                  >
+                    ${preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Delivery Date & Time */}
           <div>
@@ -267,15 +306,28 @@ export default function SendGiftDetailsForm({
             />
           </div>
 
-          {/* Submit Button */}
-          <Button
-            onClick={handleContinue}
-            disabled={!isFormValid || isLoading}
-            isLoading={isLoading}
-            className="w-full h-12 mt-2 rounded-xl bg-[#5A42DE] hover:bg-[#4E37CC] text-white text-[15px] font-semibold transition-all duration-200 disabled:opacity-50"
-          >
-            Continue
-          </Button>
+          {/* Navigation Buttons */}
+          <div className="flex gap-3 mt-6">
+            {showOptionsOnly && onBack && (
+              <Button
+                onClick={onBack}
+                disabled={isLoading}
+                className="flex-1 h-12 rounded-xl bg-white border border-[#E5E7EB] text-[#18181B] text-[15px] font-semibold hover:bg-gray-50 transition-all duration-200"
+              >
+                Back
+              </Button>
+            )}
+            <Button
+              onClick={handleContinue}
+              disabled={!isFormValid || isLoading}
+              isLoading={isLoading}
+              className={`h-12 rounded-xl bg-[#5A42DE] hover:bg-[#4E37CC] text-white text-[15px] font-semibold transition-all duration-200 disabled:opacity-50 ${
+                showOptionsOnly && onBack ? "flex-1" : "w-full"
+              }`}
+            >
+              Continue
+            </Button>
+          </div>
         </div>
       </div>
     </div>

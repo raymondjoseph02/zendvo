@@ -288,14 +288,6 @@ describe("OTP Security - Dual-Window Locking", () => {
         where: jest.fn(() => Promise.resolve()),
       });
 
-      // Note: This test verifies the logic structure
-      // In actual implementation, successful verification clears:
-      // - status: "active"
-      // - lockUntil: null
-      // - loginAttempts: 0
-      // - otpFailedAttempts: 0
-      // - otpAttemptsWindowStart: null
-
       expect(true).toBe(true); // Structure verified in code review
     });
   });

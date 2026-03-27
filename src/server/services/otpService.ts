@@ -249,7 +249,7 @@ async function sendSMSViaProvider(phoneNumber: string, message: string): Promise
 export async function storeOTP(userId: string, otp: string) {
   const { salt, hash } = hashOTP(otp);
   const storedValue = `${salt}:${hash}`;
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   // Invalidate previous unused OTPs
   await db

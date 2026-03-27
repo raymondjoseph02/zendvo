@@ -12,6 +12,7 @@ import {
 } from "@/lib/validation";
 import { generateOTP, storeGiftOTP } from "@/server/services/otpService";
 import { sendGiftConfirmationOTP } from "@/server/services/emailService";
+import { generateUniqueSlug } from "@/lib/slug";
 
 export async function GET() {
   return NextResponse.json({ gifts: [] });
@@ -72,6 +73,28 @@ export async function POST(request: NextRequest) {
     const sanitizedTemplate = template ? sanitizeInput(template) : null;
     const sanitizedCoverImageId = coverImageId ? sanitizeInput(String(coverImageId)) : null;
 
+    // Validate message length
+    if (!validateMessage(sanitizedMessage)) {
+      return NextResponse.json(
+        { success: false, error: "Message cannot exceed 500 characters" },
+        { status: 400 },
+      );
+    }
+
+    // Validate unlock_at if provided
+    if (unlock_at) {
+      const unlockValidation = validateUnlockAt(unlock_at);
+      if (!unlockValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: unlockValidation.error },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Generate short link slug
+    const slug = await generateUniqueSlug();
+
     // Create gift record
     const [newGift] = await db
       .insert(gifts)
@@ -85,6 +108,7 @@ export async function POST(request: NextRequest) {
         coverImageId: sanitizedCoverImageId,
         unlockDatetime: unlock_at ? new Date(unlock_at) : null,
         status: "pending_otp",
+        slug,
       })
       .returning();
 
@@ -111,6 +135,7 @@ export async function POST(request: NextRequest) {
         success: true,
         giftId: newGift.id,
         status: "pending_otp",
+        slug: newGift.slug,
       },
       { status: 201 },
     );

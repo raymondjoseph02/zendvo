@@ -441,6 +441,7 @@ export async function verifyOTP(userId: string, otp: string) {
       loginAttempts: 0,
       otpFailedAttempts: 0,
       otpAttemptsWindowStart: null,
+      isPhoneVerified: true,
     })
     .where(eq(users.id, userId));
 

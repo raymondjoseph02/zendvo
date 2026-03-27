@@ -49,6 +49,7 @@ export const users = pgTable(
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     lastLogin: timestamp("last_login"),
     lastOtpSentAt: timestamp("last_otp_sent_at"),
+    isPhoneVerified: boolean("is_phone_verified").default(false).notNull(),
   },
   (table) => {
     return [
@@ -148,6 +149,7 @@ export const gifts = pgTable(
     senderAvatar: text("sender_avatar"),
     shareLink: text("share_link").unique(),
     shareLinkToken: text("share_link_token").unique(),
+    slug: text("slug").unique(),
     coverImageId: text("cover_image_id"),
     linkExpiresAt: timestamp("link_expires_at"),
     completedAt: timestamp("completed_at"),
@@ -164,7 +166,6 @@ export const gifts = pgTable(
         table.recipientId,
       ),
       index("gift_share_link_token_idx").on(table.shareLinkToken),
-      index("gift_blockchain_tx_hash_idx").on(table.blockchainTxHash),
     ];
   },
 );

@@ -3,6 +3,7 @@ import { gifts, wallets } from "@/lib/db/schema";
 import { notifyGiftCompleted } from "@/server/services/notificationService";
 import { verifyPayment as verifyPaystackPayment, isPaymentSuccessful as isPaystackPaymentSuccessful } from "@/lib/paystack/api";
 import { verifyPayment as verifyStripePayment, isPaymentSuccessful as isStripePaymentSuccessful } from "@/lib/stripe/client";
+import { validateCurrency } from "@/lib/validation";
 import crypto from "crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -68,6 +69,16 @@ export async function POST(
         {
           success: false,
           error: `Gift must be confirmed before confirmation. Current status: ${gift.status}`,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!validateCurrency(gift.currency)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unsupported currency. Accepted: NGN, USD",
         },
         { status: 400 },
       );

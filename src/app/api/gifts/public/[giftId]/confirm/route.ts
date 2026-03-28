@@ -4,6 +4,7 @@ import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { processGiftTransaction } from "@/server/services/transactionService";
 import { notifyGiftConfirmed } from "@/server/services/notificationService";
+import { validateCurrency } from "@/lib/validation";
 import {
   sendGiftCompletionToSender,
   sendGiftNotificationToRecipient,
@@ -52,6 +53,16 @@ export async function POST(
           success: false,
           error: `Gift cannot be confirmed. Current status: ${gift.status}. Expected: pending_review`,
           status: gift.status,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (!validateCurrency(gift.currency)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unsupported currency. Accepted: NGN, USD",
         },
         { status: 400 },
       );
@@ -183,6 +194,15 @@ export async function POST(
     );
   } catch (error) {
     console.error("[GIFT_CONFIRM_ERROR]", error);
+    if (
+      error instanceof Error &&
+      error.message === "Unsupported currency. Accepted: NGN, USD"
+    ) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 400 },
+      );
+    }
     if (
       error instanceof Error &&
       error.message.includes("Insufficient balance")

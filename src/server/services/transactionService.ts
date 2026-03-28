@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { wallets } from "@/lib/db/schema";
+import { validateCurrency } from "@/lib/validation";
 import { eq, and, sql } from "drizzle-orm";
 import crypto from "crypto";
 
@@ -14,12 +15,21 @@ export async function processGiftTransaction(
   params: ProcessGiftTransactionParams,
 ) {
   const { senderId, recipientId, amount, currency } = params;
+  const normalizedCurrency = currency.toUpperCase();
+
+  if (!validateCurrency(normalizedCurrency)) {
+    throw new Error("Unsupported currency. Accepted: NGN, USD");
+  }
+
   const transactionId = `txn_${crypto.randomUUID()}`;
 
   // If sender is authenticated, deduct from their wallet
   if (senderId) {
     const senderWallet = await db.query.wallets.findFirst({
-      where: and(eq(wallets.userId, senderId), eq(wallets.currency, currency)),
+      where: and(
+        eq(wallets.userId, senderId),
+        eq(wallets.currency, normalizedCurrency),
+      ),
     });
 
     if (!senderWallet || senderWallet.balance < amount) {
@@ -33,7 +43,9 @@ export async function processGiftTransaction(
         balance: sql`${wallets.balance} - ${amount}`,
         updatedAt: new Date(),
       })
-      .where(and(eq(wallets.userId, senderId), eq(wallets.currency, currency)));
+      .where(
+        and(eq(wallets.userId, senderId), eq(wallets.currency, normalizedCurrency)),
+      );
   }
 
   // Upsert recipient wallet (add)
@@ -41,7 +53,7 @@ export async function processGiftTransaction(
     .insert(wallets)
     .values({
       userId: recipientId,
-      currency,
+      currency: normalizedCurrency,
       balance: amount,
     })
     .onConflictDoUpdate({

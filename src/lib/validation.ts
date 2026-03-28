@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { supportedCurrencyCodes } from "@/lib/db/schema";
 
 export const validateEmail = (email: string): boolean => {
   const emailRegex =
@@ -21,9 +22,17 @@ export const validateAmount = (amount: number): boolean => {
 };
 
 export const validateCurrency = (currency: string): boolean => {
-  const supportedCurrencies = ["USD", "EUR", "GBP", "NGN", "USDC"]; // Add more as needed
-  return supportedCurrencies.includes(currency.toUpperCase());
+  return supportedCurrencyCodes.includes(
+    currency.toUpperCase() as (typeof supportedCurrencyCodes)[number],
+  );
 };
+
+export const CurrencySchema = z
+  .string()
+  .refine(validateCurrency, {
+    message: `Unsupported currency. Accepted: ${supportedCurrencyCodes.join(", ")}`,
+  })
+  .transform((value) => value.toUpperCase());
 
 export const validateFutureDatetime = (date: Date): boolean => {
   return !isNaN(date.getTime()) && date.getTime() > Date.now();
@@ -106,7 +115,7 @@ export const validateMessage = (message: string | null | undefined): boolean => 
 export const CreateGiftSchema = z.object({
   recipient: z.string().uuid("Invalid recipient ID"),
   amount: z.number().min(500, "Gift amount needs to be above the minimum threshold"),
-  currency: z.string().default("USDC"),
+  currency: CurrencySchema.default("NGN"),
   message: z.string().max(500, "Message cannot exceed 500 characters").optional().nullable(),
   template: z.string().optional().nullable(),
   coverImageId: z.union([z.string(), z.number()]).optional().nullable(),

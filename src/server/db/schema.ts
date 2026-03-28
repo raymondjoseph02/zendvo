@@ -1,5 +1,7 @@
 import { integer, real, sqliteTable, text, index } from "drizzle-orm/sqlite-core";
 
+export const supportedCurrencyCodes = ["NGN", "USD"] as const;
+
 export const users = sqliteTable("User", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
@@ -42,7 +44,7 @@ export const gifts = sqliteTable("Gift", {
   senderId: text("senderId"),
   recipientId: text("recipientId").notNull(),
   amount: real("amount").notNull(),
-  currency: text("currency").notNull().default("USDC"),
+  currency: text("currency").notNull().default("NGN"),
   message: text("message"),
   template: text("template"),
   status: text("status").notNull(),

@@ -3,8 +3,6 @@ import { db } from "@/lib/db";
 import { users, gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import {
-  validateAmount,
-  validateCurrency,
   sanitizeInput,
   validateMessage,
   validateUnlockAt,
@@ -102,7 +100,7 @@ export async function POST(request: NextRequest) {
         senderId: userId,
         recipientId: recipient,
         amount,
-        currency: currency.toUpperCase(),
+        currency,
         message: sanitizedMessage,
         template: sanitizedTemplate,
         coverImageId: sanitizedCoverImageId,

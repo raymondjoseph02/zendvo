@@ -34,3 +34,13 @@ export function calculateProcessingFee(
 
   return Math.round(fee * 100) / 100;
 }
+
+/**
+ * Calculate Zendvo platform fee (2% of gift amount)
+ * @param amount - The base gift amount
+ * @returns The platform fee amount (2% of the input amount)
+ */
+export function calculateFee(amount: number): number {
+  const fee = (amount * 2) / 100;
+  return Math.round(fee * 100) / 100;
+}

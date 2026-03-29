@@ -13,8 +13,7 @@ import {
 } from "@/lib/validation";
 import { generateOTP, storeGiftOTP } from "@/server/services/otpService";
 import { sendGiftConfirmationOTP } from "@/server/services/emailService";
-import { generateUniqueSlug } from "@/lib/slug";
-import { generateUniqueShortCode } from "@/lib/shortCode";
+import { calculateFee } from "@/lib/fees";
 
 export async function GET() {
   return NextResponse.json({ gifts: [] });
@@ -94,14 +93,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate short link slug
-    const slug = await generateUniqueSlug();
-
-    // Generate short code for public share links
-    const shortCode = await generateUniqueShortCode();
-
-    // Convert unlock_at to UTC for database storage
-    const utcUnlockDatetime = unlock_at ? convertToUTCDate(unlock_at) : null;
+    // Calculate platform fee (2%)
+    const fee = calculateFee(amount);
+    const totalAmount = Math.round((amount + fee) * 100) / 100;
 
     // Create gift record
     const [newGift] = await db
@@ -110,6 +104,8 @@ export async function POST(request: NextRequest) {
         senderId: userId,
         recipientId: recipient,
         amount,
+        fee,
+        totalAmount,
         currency: currency.toUpperCase(),
         message: sanitizedMessage,
         template: sanitizedTemplate,

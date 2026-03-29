@@ -134,6 +134,8 @@ export const gifts = pgTable(
       .notNull()
       .references(() => users.id),
     amount: doublePrecision("amount").notNull(),
+    fee: doublePrecision("fee").default(0).notNull(),
+    totalAmount: doublePrecision("total_amount").notNull(),
     currency: text("currency").notNull(),
     message: text("message"),
     template: text("template"),

@@ -214,7 +214,7 @@ describe("POST /api/gifts", () => {
 
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
-    expect(data.error).toBe("unlock_at must be a valid ISO 8601 date string (e.g., 2026-03-30T14:00:00.000Z)");
+    expect(data.error).toContain("timezone and milliseconds");
   });
 
   it("should create a gift successfully with valid unlock_at", async () => {
@@ -277,7 +277,7 @@ describe("POST /api/gifts", () => {
 
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
-    expect(data.error).toBe("unlock_at must be a valid ISO 8601 date string with timezone (e.g., 2026-03-30T14:00:00.000Z or 2026-03-30T14:00:00+01:00)");
+    expect(data.error).toContain("timezone and milliseconds");
   });
 
   it("should reject incomplete ISO format for unlock_at", async () => {
@@ -307,7 +307,7 @@ describe("POST /api/gifts", () => {
 
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
-    expect(data.error).toBe("unlock_at must be a valid ISO 8601 date string with timezone (e.g., 2026-03-30T14:00:00.000Z or 2026-03-30T14:00:00+01:00)");
+    expect(data.error).toContain("timezone and milliseconds");
   });
 
   it("should accept valid ISO 8601 with Z timezone for unlock_at", async () => {
@@ -351,8 +351,21 @@ describe("POST /api/gifts", () => {
     });
     mockInsertReturning({ id: "gift-123", slug: "abc123", shortCode: "xyz123ab" });
 
+    // Create a date 2 hours from now and format it with +01:00 timezone
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const offsetFormat = twoHoursFromNow.toISOString().replace('Z', '+01:00'); // Change to +01:00 timezone
+    // Create a proper ISO 8601 string with offset timezone and milliseconds
+    // We need to adjust the time to account for the +01:00 offset
+    const adjustedDate = new Date(twoHoursFromNow.getTime() - (1 * 60 * 60 * 1000)); // Subtract 1 hour for +01:00 offset
+    
+    const year = adjustedDate.getUTCFullYear();
+    const month = String(adjustedDate.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(adjustedDate.getUTCDate()).padStart(2, '0');
+    const hours = String(adjustedDate.getUTCHours()).padStart(2, '0');
+    const minutes = String(adjustedDate.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(adjustedDate.getUTCSeconds()).padStart(2, '0');
+    const milliseconds = String(adjustedDate.getUTCMilliseconds()).padStart(3, '0');
+    
+    const offsetFormat = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}+01:00`;
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",

@@ -64,13 +64,19 @@ describe("POST /api/auth/login", () => {
     jest.clearAllMocks();
   });
 
-  const makeRequest = (body: object, ip: string) => {
+  const makeRequest = (body: object, ip: string, userAgent?: string) => {
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      "x-forwarded-for": ip,
+    };
+
+    if (userAgent) {
+      headers["user-agent"] = userAgent;
+    }
+
     return new NextRequest("http://localhost/api/auth/login", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-forwarded-for": ip,
-      },
+      headers,
       body: JSON.stringify(body),
     });
   };
@@ -105,6 +111,13 @@ describe("POST /api/auth/login", () => {
       role: "user",
     });
     expect(transactionMock).toHaveBeenCalledTimes(1);
+    expect(insertValuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-123",
+        token: "mock-refresh-token",
+        deviceId: expect.any(String),
+      }),
+    );
   });
 
   it("returns 401 when password is invalid", async () => {
@@ -173,5 +186,67 @@ describe("POST /api/auth/login", () => {
 
     expect(limitedResponse.status).toBe(429);
     expect(json.error).toContain("Too many failed login attempts");
+  });
+
+  it("uses provided device_id from request body", async () => {
+    const { POST } = await import("@/app/api/auth/login/route");
+
+    selectLimitMock.mockResolvedValue([
+      {
+        id: "user-123",
+        email: "test@example.com",
+        passwordHash: "hashed-password",
+        role: "user",
+      },
+    ]);
+    (comparePassword as jest.Mock).mockResolvedValue(true);
+
+    const response = await POST(
+      makeRequest(
+        {
+          email: "test@example.com",
+          password: "Password123!",
+          device_id: "mobile-device-123",
+        },
+        "10.0.0.5",
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(insertValuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceId: "mobile-device-123",
+      }),
+    );
+  });
+
+  it("generates device_id from user-agent when not provided", async () => {
+    const { POST } = await import("@/app/api/auth/login/route");
+
+    selectLimitMock.mockResolvedValue([
+      {
+        id: "user-123",
+        email: "test@example.com",
+        passwordHash: "hashed-password",
+        role: "user",
+      },
+    ]);
+    (comparePassword as jest.Mock).mockResolvedValue(true);
+
+    const response = await POST(
+      makeRequest(
+        { email: "test@example.com", password: "Password123!" },
+        "10.0.0.6",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      ),
+    );
+
+    expect(response.status).toBe(200);
+    expect(insertValuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        deviceId: expect.any(String),
+      }),
+    );
   });
 });

@@ -12,6 +12,53 @@ const EMAIL_CONFIG = {
 
 const transporter = nodemailer.createTransport(EMAIL_CONFIG);
 
+export async function sendAdminAlert(data: {
+  userIds: string[];
+  ips: string[];
+  phoneNumbers: string[];
+  failureCount: number;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL || EMAIL_CONFIG.auth.user;
+  const mailOptions = {
+    from: `"Zendvo Security" <${EMAIL_CONFIG.auth.user}>`,
+    to: adminEmail,
+    subject: "🚨 SECURITY ALERT: Suspicious OTP Brute-force Detected",
+    html: generateAdminAlertTemplate(data),
+    text: `Suspicious Activity Alert!\n\nThreshold: ${data.failureCount} failed OTP attempts.\nIPs: ${data.ips.join(", ")}\nUser IDs: ${data.userIds.join(", ")}\nPhone Numbers: ${data.phoneNumbers.join(", ")}`,
+  };
+
+  try {
+    if (process.env.NODE_ENV === "development") {
+      console.log("!".repeat(50));
+      console.log("🚨 ADMIN SECURITY ALERT (Development Mode)");
+      console.log("!".repeat(50));
+      console.log(`To Admin: ${adminEmail}`);
+      console.log(`Failures: ${data.failureCount}`);
+      console.log(`Involved IPs: ${data.ips.join(", ")}`);
+      console.log("!".repeat(50));
+      return {
+        success: true,
+        messageId: "dev-mode",
+        message: "Admin alert logged to console",
+      };
+    }
+
+    const info = await transporter.sendMail(mailOptions);
+    return {
+      success: true,
+      messageId: info.messageId,
+      message: "Admin security alert sent successfully",
+    };
+  } catch (error) {
+    console.error("Error sending admin security alert:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+      message: "Failed to send admin security alert",
+    };
+  }
+}
+
 export async function sendVerificationEmail(
   email: string,
   otp: string,
@@ -304,6 +351,50 @@ function generateSecurityAlertTemplate(userName?: string): string {
           </td>
         </tr>
       </table>
+    `,
+  });
+}
+
+function generateAdminAlertTemplate(data: {
+  userIds: string[];
+  ips: string[];
+  phoneNumbers: string[];
+  failureCount: number;
+}): string {
+  return generateBaseTemplate({
+    title: "Suspicious Activity Detected",
+    userName: "Administrator",
+    content: `
+      <div style="background-color: #fff5f5; border-left: 4px solid #c53030; padding: 20px; margin: 0 0 30px 0;">
+        <h3 style="margin: 0 0 10px; color: #c53030; font-size: 18px;">Brute-force Threshold Reached</h3>
+        <p style="margin: 0; color: #742a2a; font-size: 14px;">
+          Our security system has detected <strong>${data.failureCount}</strong> consecutive OTP verification failures from a single source.
+        </p>
+      </div>
+
+      <h4 style="color: #2d3748; margin: 20px 0 10px;">Security Metadata:</h4>
+      <table width="100%" cellpadding="10" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; color: #4a5568;">
+        <tr style="background-color: #f7fafc;">
+          <td width="30%"><strong>Involved IPs</strong></td>
+          <td style="word-break: break-all; font-family: monospace;">${data.ips.join(", ") || "Unknown"}</td>
+        </tr>
+        <tr>
+          <td><strong>Targeted User IDs</strong></td>
+          <td style="word-break: break-all; font-family: monospace;">${data.userIds.join(", ") || "None"}</td>
+        </tr>
+        <tr style="background-color: #f7fafc;">
+          <td><strong>Phone Numbers</strong></td>
+          <td>${data.phoneNumbers.join(", ") || "None"}</td>
+        </tr>
+        <tr>
+          <td><strong>Timestamp</strong></td>
+          <td>${new Date().toISOString()}</td>
+        </tr>
+      </table>
+
+      <p style="margin: 30px 0 0; color: #4a5568; font-size: 14px; line-height: 1.6;">
+        <strong>Recommended Action:</strong> Please investigate the involved IP addresses and consider temporary blacklisting if the activity persists across different accounts.
+      </p>
     `,
   });
 }

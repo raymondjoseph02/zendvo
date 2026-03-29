@@ -6,7 +6,7 @@ jest.mock("../../src/server/services/otpService", () => ({
 }));
 
 describe("POST /api/auth/verify-email", () => {
-  const mockRequest = (body: any) =>
+  const mockRequest = (body: unknown) =>
     ({
       json: async () => body,
     }) as unknown as Request;

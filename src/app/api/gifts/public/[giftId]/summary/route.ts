@@ -13,6 +13,21 @@ export async function GET(
 
     const gift = await db.query.gifts.findFirst({
       where: eq(gifts.id, giftId),
+      columns: {
+        id: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+        amount: true,
+        currency: true,
+        message: true,
+        senderName: true,
+        hideAmount: true,
+        hideSender: true,
+        unlockDatetime: true,
+        linkExpiresAt: true,
+        isAnonymous: true,
+      },
       with: {
         recipient: { columns: { id: true, name: true, email: true } },
         sender: { columns: { name: true } },
@@ -60,9 +75,9 @@ export async function GET(
             hideAmount: gift.hideAmount,
             hideSender: gift.hideSender,
           },
-          unlockDatetime: gift.unlockDatetime,
+          unlockDatetime: gift.unlockDatetime ? gift.unlockDatetime.toISOString() : null,
           message: gift.message,
-          senderName: gift.isAnonymous ? "Anonymous" : (gift.sender?.name ?? gift.senderName ?? null),
+          senderName: gift.sender?.name ?? gift.senderName ?? null,
         },
       },
       { status: 200 },

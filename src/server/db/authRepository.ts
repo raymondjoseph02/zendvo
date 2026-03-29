@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { passwordResets, refreshTokens, users } from "@/lib/db/schema";
+import { sanitizePhoneNumber } from "@/lib/validation";
 
 export interface RegisterUserInput {
   email: string;
@@ -47,8 +48,10 @@ export async function findUserByEmail(email: string): Promise<AuthUser | null> {
 }
 
 export async function findUserByPhoneNumber(phoneNumber: string): Promise<AuthUser | null> {
+  const normalizedPhone = sanitizePhoneNumber(phoneNumber);
+
   const user = await db.query.users.findFirst({
-    where: eq(users.phoneNumber, phoneNumber),
+    where: eq(users.phoneNumber, normalizedPhone),
   });
 
   if (!user) return null;
@@ -64,13 +67,17 @@ export async function findUserByPhoneNumber(phoneNumber: string): Promise<AuthUs
 }
 
 export async function createUser(input: RegisterUserInput): Promise<AuthUser> {
+  const normalizedPhoneNumber = input.phoneNumber
+    ? sanitizePhoneNumber(input.phoneNumber)
+    : null;
+
   const [user] = await db
     .insert(users)
     .values({
       email: input.email,
       passwordHash: input.passwordHash,
       name: input.name ?? null,
-      phoneNumber: input.phoneNumber ?? null,
+      phoneNumber: normalizedPhoneNumber,
       role: "user",
       status: "unverified",
       loginAttempts: 0,
@@ -140,4 +147,24 @@ export async function completePasswordReset(input: {
     );
 
   await db.delete(refreshTokens).where(eq(refreshTokens.userId, input.userId));
+}
+
+export async function findRefreshToken(token: string) {
+  return await db.query.refreshTokens.findFirst({
+    where: eq(refreshTokens.token, token),
+  });
+}
+
+export async function revokeRefreshToken(tokenId: string) {
+  await db
+    .update(refreshTokens)
+    .set({ revokedAt: new Date() })
+    .where(eq(refreshTokens.id, tokenId));
+}
+
+export async function revokeAllUserRefreshTokens(userId: string) {
+  await db
+    .update(refreshTokens)
+    .set({ revokedAt: new Date() })
+    .where(eq(refreshTokens.userId, userId));
 }

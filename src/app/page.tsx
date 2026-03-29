@@ -129,7 +129,7 @@ export default function LandingPage() {
               Everything you need to send the perfect gift
             </h2>
             <p className="text-[#717182] text-lg">
-              We've built a suite of tools to make digital gifting personal and
+              We&apos;ve built a suite of tools to make digital gifting personal and
               delightful.
             </p>
           </div>

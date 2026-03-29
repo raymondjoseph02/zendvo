@@ -13,7 +13,7 @@ export default function SettingsPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-[#18181B]">Account Settings</h1>
         <p className="text-[#717182] max-w-md mx-auto">
-          We're fine-tuning the controls. You'll soon be able to customize your
+          We&apos;re fine-tuning the controls. You&apos;ll soon be able to customize your
           profile, safety preferences, and notification settings right here.
         </p>
       </div>

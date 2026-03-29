@@ -110,7 +110,7 @@ describe("validateE164PhoneNumber", () => {
     expect(validateE164PhoneNumber("+447911234567")).toBe(true);
     expect(validateE164PhoneNumber("+15551234567")).toBe(true);
     expect(validateE164PhoneNumber("+44791123456")).toBe(true); // Minimum length
-    expect(validateE164PhoneNumber("+447911234567890123")).toBe(true); // Maximum length
+    expect(validateE164PhoneNumber("+447911234567890")).toBe(true); // Maximum E.164 length (15 digits)
   });
 
   it("should reject invalid E.164 numbers", () => {
@@ -119,8 +119,6 @@ describe("validateE164PhoneNumber", () => {
     expect(validateE164PhoneNumber("+234")).toBe(false); // Too short
     expect(validateE164PhoneNumber("+2348123456789012345")).toBe(false); // Too long
     expect(validateE164PhoneNumber("+2348123456789a")).toBe(false); // Contains letter
-    expect(validateE164PhoneNumber("+234-812-345-6789")).toBe(false); // Contains dash
-    expect(validateE164PhoneNumber("+234 (812) 345-6789")).toBe(false); // Contains parentheses
   });
 
   it("should accept various input formats and validate after sanitization", () => {
@@ -209,7 +207,7 @@ describe("validateUnlockAt", () => {
   it("should reject invalid date formats", () => {
     const result = validateUnlockAt("invalid-date");
     expect(result.valid).toBe(false);
-    expect(result.error).toBe("Invalid date format for unlock_at");
+    expect(result.error).toContain("timezone and milliseconds");
   });
 
   it("should accept exactly 1 hour in the future", () => {

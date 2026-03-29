@@ -172,7 +172,7 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
         </div>
 
         <p className="text-[11px] text-[#717182] mt-6 text-center">
-          By proceeding, you have accepted Zendvo's{" "}
+          By proceeding, you have accepted Zendvo&apos;s{" "}
           <a href="#" className="text-[#5A42DE] font-medium hover:underline">Terms</a> and{" "}
           <a href="#" className="text-[#5A42DE] font-medium hover:underline">Privacy Policy</a>
         </p>

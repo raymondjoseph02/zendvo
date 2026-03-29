@@ -1,7 +1,7 @@
 import { POST } from "../../src/app/api/auth/resend-verification/route";
 import { generateOTP, storeOTP } from "../../src/server/services/otpService";
 import { sendVerificationEmail } from "../../src/server/services/emailService";
-import { PrismaClient } from "@prisma/client";
+import { db } from "../../src/lib/db";
 
 jest.mock("../../src/server/services/otpService", () => ({
   generateOTP: jest.fn(),
@@ -11,19 +11,18 @@ jest.mock("../../src/server/services/emailService", () => ({
   sendVerificationEmail: jest.fn(),
 }));
 
-jest.mock("@prisma/client", () => {
-  const mPrismaClient = {
-    user: {
-      findUnique: jest.fn(),
+jest.mock("../../src/lib/db", () => ({
+  db: {
+    query: {
+      users: {
+        findFirst: jest.fn(),
+      },
     },
-  };
-  return { PrismaClient: jest.fn(() => mPrismaClient) };
-});
-
-const prisma = new PrismaClient();
+  },
+}));
 
 describe("POST /api/auth/resend-verification", () => {
-  const mockRequest = (body: any) =>
+  const mockRequest = (body: unknown) =>
     ({
       json: async () => body,
     }) as unknown as Request;
@@ -33,7 +32,7 @@ describe("POST /api/auth/resend-verification", () => {
   });
 
   it("should send verification if within limit", async () => {
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue({
       id: "user-resend-1",
       status: "pending",
     });
@@ -53,7 +52,7 @@ describe("POST /api/auth/resend-verification", () => {
   });
 
   it("should rate limit after 3 attempts", async () => {
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue({
       id: "user-resend-limit",
       status: "pending",
     });

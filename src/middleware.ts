@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyAccessToken, verifyAccessTokenDetailed } from "@/lib/tokens";
 import { consumeRateLimit } from "@/lib/rate-limiter";
+import { getAccountTypeFromRole } from "@/lib/auth";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -9,7 +10,8 @@ import {
   ACCESS_TOKEN_MAX_AGE,
   REFRESH_TOKEN_MAX_AGE,
 } from "@/lib/cookies";
-import type { TokenPayload, UserRole } from "@/lib/tokens";
+import type { TokenPayload } from "@/lib/tokens";
+import { computeFingerprint } from "@/lib/fingerprint";
 
 // API routes that require authentication
 const PROTECTED_API_ROUTES = [
@@ -98,14 +100,36 @@ export async function middleware(request: NextRequest) {
   return withAuthRateLimitHeaders(request, NextResponse.next());
 }
 
+async function isFingerprintValid(
+  request: NextRequest,
+  payload: TokenPayload,
+): Promise<boolean> {
+  if (!payload.fingerprint) {
+    // No fingerprint in token — skip check (backward compat with pre-feature sessions)
+    return true;
+  }
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "127.0.0.1";
+  const userAgent = request.headers.get("user-agent");
+  const incoming = await computeFingerprint(userAgent, ip);
+  return incoming === payload.fingerprint;
+}
+
 function injectUserHeaders(
   request: NextRequest,
   payload: TokenPayload,
 ): NextResponse {
   const requestHeaders = new Headers(request.headers);
+  const accountType = getAccountTypeFromRole(payload.role);
+
   requestHeaders.set("x-user-id", payload.userId);
   requestHeaders.set("x-user-email", payload.email);
   requestHeaders.set("x-user-role", payload.role);
+  if (accountType) {
+    requestHeaders.set("X-Account-Type", accountType);
+  }
+
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
@@ -120,6 +144,9 @@ async function handleDashboardRoute(
     const result = await verifyAccessTokenDetailed(accessToken);
 
     if (result.valid) {
+      if (!(await isFingerprintValid(request, result.payload))) {
+        return redirectToLogin(request);
+      }
       return injectUserHeaders(request, result.payload);
     }
 
@@ -194,6 +221,12 @@ async function handleApiRoute(request: NextRequest): Promise<NextResponse> {
     const token = authHeader.split(" ")[1];
     const payload = await verifyAccessToken(token);
     if (payload) {
+      if (!(await isFingerprintValid(request, payload))) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized: session fingerprint mismatch" },
+          { status: 401 },
+        );
+      }
       return injectUserHeaders(request, payload);
     }
   }
@@ -203,6 +236,12 @@ async function handleApiRoute(request: NextRequest): Promise<NextResponse> {
   if (accessToken) {
     const payload = await verifyAccessToken(accessToken);
     if (payload) {
+      if (!(await isFingerprintValid(request, payload))) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized: session fingerprint mismatch" },
+          { status: 401 },
+        );
+      }
       return injectUserHeaders(request, payload);
     }
   }

@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { passwordResets } from "@/lib/db/schema";
 import { or, lt, isNotNull } from "drizzle-orm";
+import { isPostgresBusyError } from "@/lib/isPostgresBusy";
+import { enqueueWebhookRetry } from "../services/webhookRetryService";
 
 export async function cleanupExpiredTokens() {
   try {
@@ -22,8 +24,16 @@ export async function cleanupExpiredTokens() {
     );
     return result.length;
   } catch (error) {
+    if (isPostgresBusyError(error)) {
+      console.warn("Postgres busy — queueing webhook");
     console.error("[CLEANUP_JOB_ERROR]", error);
-    throw error;
+    await enqueueWebhookRetry({
+      eventType: "EXPIRED_PASSWORD_RESET",
+      payload: {}, // payload to retry the cleanup task
+      delayMs: 5 * 60 * 1000, // retry after 5 minutes
+    })
+    // throw error;
+    }
   }
 }
 

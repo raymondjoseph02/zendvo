@@ -12,5 +12,5 @@ export interface RegisterResponse {
     email: string;
   };
   error?: string;
-  details?: any;
+  details?: unknown;
 }

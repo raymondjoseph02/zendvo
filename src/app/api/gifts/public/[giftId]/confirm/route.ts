@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { generateShareLinkToken } from "@/lib/tokens";
 import { processGiftTransaction } from "@/server/services/transactionService";
 import { notifyGiftConfirmed } from "@/server/services/notificationService";
 import {
   sendGiftCompletionToSender,
   sendGiftNotificationToRecipient,
 } from "@/server/services/emailService";
+import { verifyPayment as verifyPaystackPayment, isPaymentSuccessful as isPaystackPaymentSuccessful } from "@/lib/paystack/api";
+import { verifyPayment as verifyStripePayment, isPaymentSuccessful as isStripePaymentSuccessful } from "@/lib/stripe/client";
 
 export async function POST(
   request: NextRequest,
@@ -16,6 +17,9 @@ export async function POST(
 ) {
   try {
     const { giftId } = await params;
+
+    const body = await request.json().catch(() => ({}));
+    const blockchainTxHash = body.blockchain_tx_hash || body.blockchainTxHash || null;
 
     const gift = await db.query.gifts.findFirst({
       where: eq(gifts.id, giftId),
@@ -53,8 +57,54 @@ export async function POST(
       );
     }
 
-    const shareLinkToken = generateShareLinkToken();
-    const shareLink = `/gift/${shareLinkToken}`;
+    // Verify payment before proceeding with on-chain operations
+    if (gift.paymentReference && gift.paymentProvider) {
+      try {
+        let verificationResult;
+        let isPaymentSuccessful;
+
+        if (gift.paymentProvider === "paystack") {
+          verificationResult = await verifyPaystackPayment(gift.paymentReference);
+          isPaymentSuccessful = isPaystackPaymentSuccessful(verificationResult.status);
+        } else if (gift.paymentProvider === "stripe") {
+          verificationResult = await verifyStripePayment(gift.paymentReference);
+          isPaymentSuccessful = isStripePaymentSuccessful(verificationResult.status);
+        } else {
+          return NextResponse.json(
+            { success: false, error: "Unsupported payment provider" },
+            { status: 400 },
+          );
+        }
+
+        if (!isPaymentSuccessful) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Payment verification failed. Payment status: ${verificationResult.status}`,
+              paymentStatus: verificationResult.status,
+            },
+            { status: 402 },
+          );
+        }
+
+        // Update gift with payment verification timestamp
+        await db
+          .update(gifts)
+          .set({ paymentVerifiedAt: new Date() })
+          .where(eq(gifts.id, giftId));
+      } catch (error) {
+        console.error("Payment verification error:", error);
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Payment verification failed. Please try again.",
+          },
+          { status: 402 },
+        );
+      }
+    }
+
+    const shareLink = `/g/${gift.slug}`;
 
     const transactionId = await processGiftTransaction({
       senderId: gift.senderId,
@@ -68,6 +118,7 @@ export async function POST(
       .set({
         status: "completed",
         transactionId,
+        blockchainTxHash,
         updatedAt: new Date(),
       })
       .where(eq(gifts.id, giftId));

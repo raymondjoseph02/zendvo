@@ -1,29 +1,33 @@
 import { POST } from "../../src/app/api/auth/send-verification/route";
 import { generateOTP, storeOTP } from "../../src/server/services/otpService";
 import { sendVerificationEmail } from "../../src/server/services/emailService";
-import { PrismaClient } from "@prisma/client";
+import { db } from "../../src/lib/db";
 
 jest.mock("../../src/server/services/otpService", () => ({
   generateOTP: jest.fn(),
   storeOTP: jest.fn(),
+  checkOTPRequestRateLimitByUserId: jest.fn().mockResolvedValue({
+    allowed: true,
+    remainingRequests: 3,
+    retryAfterMs: 0,
+  }),
 }));
 jest.mock("../../src/server/services/emailService", () => ({
   sendVerificationEmail: jest.fn(),
 }));
 
-jest.mock("@prisma/client", () => {
-  const mPrismaClient = {
-    user: {
-      findUnique: jest.fn(),
+jest.mock("../../src/lib/db", () => ({
+  db: {
+    query: {
+      users: {
+        findFirst: jest.fn(),
+      },
     },
-  };
-  return { PrismaClient: jest.fn(() => mPrismaClient) };
-});
-
-const prisma = new PrismaClient();
+  },
+}));
 
 describe("POST /api/auth/send-verification", () => {
-  const mockRequest = (body: any) =>
+  const mockRequest = (body: unknown) =>
     ({
       json: async () => body,
     }) as unknown as Request;
@@ -42,7 +46,7 @@ describe("POST /api/auth/send-verification", () => {
   });
 
   it("should return 404 if user not found", async () => {
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue(null);
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue(null);
     const req = mockRequest({ userId: "123", email: "test@example.com" });
     const res = await POST(req);
 
@@ -50,7 +54,7 @@ describe("POST /api/auth/send-verification", () => {
   });
 
   it("should return 200 if already verified", async () => {
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue({
       id: "123",
       status: "active",
     });
@@ -63,7 +67,7 @@ describe("POST /api/auth/send-verification", () => {
   });
 
   it("should generate OTP, store it, send email and return 200", async () => {
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue({
       id: "123",
       status: "pending",
     });

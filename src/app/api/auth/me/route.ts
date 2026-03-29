@@ -4,6 +4,18 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuthPayload } from "@/lib/auth-session";
 
+type AuthMeUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  role: string;
+  status: string;
+  createdAt: Date;
+  lastLogin: Date | null;
+  email_verified: boolean;
+  phone_last_4: string | null;
+};
+
 export async function GET(request: NextRequest) {
   try {
     const payload = await getAuthPayload(request);
@@ -20,6 +32,7 @@ export async function GET(request: NextRequest) {
         id: true,
         email: true,
         name: true,
+        phoneNumber: true,
         role: true,
         status: true,
         createdAt: true,
@@ -34,13 +47,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const responseUser: AuthMeUser = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      status: user.status,
+      createdAt: user.createdAt,
+      lastLogin: user.lastLogin,
+      email_verified: user.status === "active",
+      phone_last_4: user.phoneNumber?.slice(-4) ?? null,
+    };
+
     return NextResponse.json(
       {
         success: true,
-        user: {
-          ...user,
-          email_verified: user.status === "active",
-        },
+        user: responseUser,
       },
       { status: 200 },
     );

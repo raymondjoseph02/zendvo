@@ -3,8 +3,25 @@ import crypto from "crypto";
 import { db } from "@/lib/db";
 import { users, emailVerifications, gifts } from "@/lib/db/schema";
 import { eq, and, desc, lt, or, gt, sql } from "drizzle-orm";
-import { validatePhoneCountryCode } from "@/lib/validations/auth";
 import { validateE164PhoneNumber, sanitizePhoneNumber } from "@/lib/validation";
+import {
+  AuditEventType,
+  logGiftOTPEvent,
+  logOTPEvent,
+} from "@/server/services/auditService";
+import { sendAdminAlert } from "./emailService";
+
+const SUSPICIOUS_OTP_THRESHOLD = 20;
+const IP_TRACKING_WINDOW_MS = 60 * 60 * 1000; // 1 hour rolling window
+
+type IpFailureState = {
+  count: number;
+  userIds: Set<string>;
+  phoneNumbers: Set<string>;
+  lastAttempt: number;
+};
+
+const otpFailuresByIp = new Map<string, IpFailureState>();
 
 export const MAX_OTP_REQUESTS_PER_PHONE = 4;
 export const OTP_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -153,6 +170,10 @@ export function verifyOTPHash(
 ): boolean {
   const hash = crypto.createHmac("sha256", salt).update(otp).digest("hex");
 
+  if (hash.length !== storedHash.length) {
+    return false;
+  }
+
   return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(storedHash));
 }
 
@@ -164,15 +185,6 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
         success: false,
         message: "Invalid phone number format. Please use E.164 format (e.g., +2348123456789)",
         error: "INVALID_PHONE_FORMAT"
-      };
-    }
-
-    const countryValidation = validatePhoneCountryCode(phoneNumber);
-    if (!countryValidation.isValid) {
-      return {
-        success: false,
-        message: countryValidation.message!,
-        error: "UNSUPPORTED_COUNTRY"
       };
     }
 
@@ -250,7 +262,7 @@ async function sendSMSViaProvider(phoneNumber: string, message: string): Promise
 export async function storeOTP(userId: string, otp: string) {
   const { salt, hash } = hashOTP(otp);
   const storedValue = `${salt}:${hash}`;
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   // Invalidate previous unused OTPs
   await db
@@ -284,7 +296,7 @@ export async function storeOTP(userId: string, otp: string) {
   return newVerification;
 }
 
-export async function verifyOTP(userId: string, otp: string) {
+export async function verifyOTP(userId: string, otp: string, ipAddress?: string) {
   const verification = await db.query.emailVerifications.findFirst({
     where: and(
       eq(emailVerifications.userId, userId),
@@ -367,6 +379,43 @@ export async function verifyOTP(userId: string, otp: string) {
       })
       .where(eq(users.id, userId));
 
+    // IP-based suspicious activity tracking
+    if (ipAddress) {
+      const now = Date.now();
+      let state = otpFailuresByIp.get(ipAddress);
+
+      // Reset tracking state if window has expired since last attempt
+      if (state && now - state.lastAttempt > IP_TRACKING_WINDOW_MS) {
+        otpFailuresByIp.delete(ipAddress);
+        state = undefined;
+      }
+
+      if (!state) {
+        state = {
+          count: 0,
+          userIds: new Set<string>(),
+          phoneNumbers: new Set<string>(),
+          lastAttempt: now,
+        };
+      }
+
+      state.count++;
+      state.lastAttempt = now;
+      state.userIds.add(userId);
+      if (user?.phoneNumber) state.phoneNumbers.add(user.phoneNumber);
+
+      otpFailuresByIp.set(ipAddress, state);
+
+      if (state.count === SUSPICIOUS_OTP_THRESHOLD) {
+        sendAdminAlert({
+          userIds: Array.from(state.userIds),
+          ips: [ipAddress],
+          phoneNumbers: Array.from(state.phoneNumbers),
+          failureCount: state.count,
+        }).catch((err) => console.error("[ADMIN_ALERT_ERROR]", err));
+      }
+    }
+
     logOTPEvent(AuditEventType.OTP_VERIFIED_FAILED, userId, {
       attemptNumber: newAttempts,
       cumulativeFailures,
@@ -442,6 +491,7 @@ export async function verifyOTP(userId: string, otp: string) {
       loginAttempts: 0,
       otpFailedAttempts: 0,
       otpAttemptsWindowStart: null,
+      isPhoneVerified: true,
     })
     .where(eq(users.id, userId));
 
@@ -450,18 +500,10 @@ export async function verifyOTP(userId: string, otp: string) {
   return { success: true, message: "Email verified successfully!" };
 }
 
-export async function cleanupExpiredOTPs() {
+export async function cleanupExpiredOTPs(): Promise<number> {
   const result = await db
     .delete(emailVerifications)
-    .where(
-      or(
-        lt(emailVerifications.expiresAt, new Date()),
-        lt(
-          emailVerifications.createdAt,
-          new Date(Date.now() - 24 * 60 * 60 * 1000),
-        ),
-      ),
-    )
+    .where(lt(emailVerifications.expiresAt, new Date()))
     .returning();
   return result.length;
 }

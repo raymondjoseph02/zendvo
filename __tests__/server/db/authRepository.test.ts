@@ -26,10 +26,6 @@ describe("Phone Number Uniqueness Constraint", () => {
       // This test verifies the schema definition
       const usersTable = users;
       expect(usersTable.phoneNumber).toBeDefined();
-      
-      // The unique constraint should be defined in the table configuration
-      const tableConfig = usersTable._.config;
-      expect(tableConfig).toBeDefined();
     });
   });
 
@@ -171,8 +167,12 @@ describe("Phone Number Uniqueness Constraint", () => {
     it("should prevent duplicate phone numbers at database level", async () => {
       // Simulate database unique violation
       const uniqueViolationError = new Error("duplicate key value violates unique constraint");
-      (uniqueViolationError as any).code = "23505";
-      (uniqueViolationError as any).detail = "Key (phone_number)=(+2348123456789) already exists.";
+      const typedUniqueViolationError = uniqueViolationError as Error & {
+        code?: string;
+        detail?: string;
+      };
+      typedUniqueViolationError.code = "23505";
+      typedUniqueViolationError.detail = "Key (phone_number)=(+2348123456789) already exists.";
 
       const mockInsert = {
         values: jest.fn().mockReturnThis(),

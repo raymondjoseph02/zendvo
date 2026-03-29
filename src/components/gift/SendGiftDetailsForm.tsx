@@ -81,11 +81,10 @@ export default function SendGiftDetailsForm({
 }: SendGiftDetailsFormProps) {
   const [countryCode, setCountryCode] = useState("+234");
   const [phoneNumber, setPhoneNumber] = useState(value?.recipientPhone || "");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [recipient, setRecipient] = useState<{
     name: string;
     username: string;
-    avatar: any;
+    avatar: string;
   } | null>(null);
 
   // Amount State (Naira formatting)
@@ -162,7 +161,7 @@ export default function SendGiftDetailsForm({
       setRecipient({
         name: "Julaybeeb Abubakar",
         username: "@julaybeeb",
-        avatar: UserProfile,
+        avatar: UserProfile.src,
       });
     } else {
       setRecipient(null);
@@ -360,7 +359,7 @@ export default function SendGiftDetailsForm({
             className="w-full flex items-center justify-center gap-1.5 text-[13px] text-[#5A42DE] font-medium hover:text-[#4E37CC] transition-colors py-1"
           >
             <Eye size={15} strokeWidth={2} />
-            Preview recipient's view
+            Preview recipient&apos;s view
           </button>
 
           {/* Submit Button */}

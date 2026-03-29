@@ -11,6 +11,16 @@ jest.mock("@/lib/db", () => ({
         findFirst: jest.fn(),
       },
     },
+    update: jest.fn(() => ({
+      set: jest.fn(() => ({
+        where: jest.fn(() => Promise.resolve()),
+      })),
+    })),
+    insert: jest.fn(() => ({
+      values: jest.fn(() => ({
+        returning: jest.fn(() => Promise.resolve([{}])),
+      })),
+    })),
   },
 }));
 

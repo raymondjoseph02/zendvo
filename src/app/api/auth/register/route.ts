@@ -173,23 +173,24 @@ export async function POST(request: NextRequest) {
         },
         { status: 201 },
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const typedError = error as { code?: string; detail?: string };
       // Handle PostgreSQL unique violation (error code 23505)
-      if (error.code === '23505') {
+      if (typedError.code === "23505") {
         console.error("[UNIQUE_VIOLATION]", error);
 
         // Check which constraint was violated
-        if (error.detail?.includes('email')) {
+        if (typedError.detail?.includes("email")) {
           return NextResponse.json(
             { success: false, error: "Email already registered" },
             { status: 409 },
           );
-        } else if (error.detail?.includes('phone_number')) {
+        } else if (typedError.detail?.includes("phone_number")) {
           return NextResponse.json(
             { success: false, error: "Phone number already registered" },
             { status: 409 },
           );
-        } else if (error.detail?.includes('username')) {
+        } else if (typedError.detail?.includes("username")) {
           return NextResponse.json(
             { success: false, error: "Username already taken" },
             { status: 409 },

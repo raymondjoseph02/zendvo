@@ -1,18 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from "next/server";
 
 import { comparePassword } from "@/lib/auth";
 import {
   ACCESS_TOKEN_COOKIE,
-  REFRESH_TOKEN_COOKIE,
-  COOKIE_OPTIONS,
   ACCESS_TOKEN_MAX_AGE,
+  COOKIE_OPTIONS,
+  REFRESH_TOKEN_COOKIE,
   REFRESH_TOKEN_MAX_AGE,
 } from "@/lib/cookies";
 import { db } from "@/lib/db";
 import { refreshTokens, users } from "@/lib/db/schema";
-import { generateAccessToken, generateRefreshToken, UserRole } from "@/lib/tokens";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  UserRole,
+} from "@/lib/tokens";
 import { sanitizeInput, validateEmail } from "@/lib/validation";
+import { cleanupExpiredOTPs } from "@/server/services/otpService";
+import { computeFingerprint } from "@/lib/fingerprint";
 
 const FAILED_ATTEMPT_LIMIT = 5;
 const FAILED_ATTEMPT_WINDOW_MS = 60 * 1000;
@@ -23,6 +29,27 @@ type FailedAttemptState = {
 };
 
 const failedAttemptsByIp = new Map<string, FailedAttemptState>();
+
+const getDeviceId = (
+  request: NextRequest,
+  bodyDeviceId?: string,
+): string | null => {
+  if (bodyDeviceId) {
+    return bodyDeviceId;
+  }
+
+  const userAgent = request.headers.get("user-agent");
+  if (!userAgent) {
+    return null;
+  }
+
+  // Generate a simple device ID from User-Agent
+  // This creates a consistent identifier for the same browser/device
+  const deviceHash = btoa(userAgent)
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .substring(0, 32);
+  return deviceHash;
+};
 
 const getClientIp = (request: NextRequest): string => {
   return (
@@ -83,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, device_id } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -136,10 +163,14 @@ export async function POST(request: NextRequest) {
 
     clearFailedAttempts(ip);
 
+    const userAgent = request.headers.get("user-agent");
+    const fingerprint = await computeFingerprint(userAgent, ip);
+
     const payload = {
       userId: user.id,
       email: user.email,
       role: user.role as UserRole,
+      fingerprint,
     };
     const accessToken = await generateAccessToken(payload);
     const refreshToken = await generateRefreshToken(payload);
@@ -159,8 +190,15 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         token: refreshToken,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        deviceInfo: request.headers.get("user-agent"),
+        deviceInfo: userAgent,
+        deviceId: getDeviceId(request, device_id),
+        fingerprint,
       });
+    });
+
+    // Lazy cleanup of expired OTPs (non-blocking)
+    cleanupExpiredOTPs().catch((error) => {
+      console.error("[OTP_CLEANUP_ERROR]", error);
     });
 
     const response = NextResponse.json(

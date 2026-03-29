@@ -16,7 +16,7 @@ export const api = {
 
   post: async <T>(
     endpoint: string,
-    body: any,
+    body: unknown,
     options?: RequestInit
   ): Promise<T> => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {

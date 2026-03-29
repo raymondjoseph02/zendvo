@@ -178,10 +178,11 @@ describe("OTP Security - Dual-Window Locking", () => {
       });
       (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
+      const setMock = jest.fn(() => ({
+        where: jest.fn(() => Promise.resolve()),
+      }));
       const updateMock = jest.fn(() => ({
-        set: jest.fn(() => ({
-          where: jest.fn(() => Promise.resolve()),
-        })),
+        set: setMock,
       }));
       (db.update as jest.Mock).mockImplementation(updateMock);
 
@@ -189,8 +190,7 @@ describe("OTP Security - Dual-Window Locking", () => {
 
       // Verify that cumulative failures was reset to 1
       expect(updateMock).toHaveBeenCalled();
-      const setCall = updateMock().set;
-      expect(setCall).toHaveBeenCalledWith(
+      expect(setMock).toHaveBeenCalledWith(
         expect.objectContaining({
           otpFailedAttempts: 1, // Reset to 1 (current attempt)
         })

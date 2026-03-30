@@ -9,6 +9,9 @@ module.exports = {
   transform: {
     ...tsJestTransformCfg,
   },
+  transformIgnorePatterns: [
+    "node_modules/(?!(nanoid)/)",
+  ],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
     "^@prisma/client$": "<rootDir>/src/lib/prisma-client-mock.ts",

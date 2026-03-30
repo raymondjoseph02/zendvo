@@ -10,6 +10,7 @@ import {
   sanitizeInput,
   convertToUTCDate,
 } from "@/lib/validation";
+import { supportedCurrencyCodes } from "@/lib/db/schema";
 import { isRateLimited } from "@/lib/rate-limiter";
 import { validateHoneypot } from "@/lib/honeypot";
 import { generateUniqueSlug } from "@/lib/slug";
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     const {
       recipientId,
       amount,
-      currency = "USDC",
+      currency = "NGN",
       unlockDatetime,
       hideAmount,
       message,
@@ -80,9 +81,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: "Unsupported currency. Accepted: USD, EUR, GBP, NGN, USDC",
+          error: `Unsupported currency. Accepted: ${supportedCurrencyCodes.join(", ")}`,
         },
-        { status: 422 },
+        { status: 400 },
       );
     }
 

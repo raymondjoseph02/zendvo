@@ -126,6 +126,29 @@ describe("POST /api/gifts", () => {
     expect(response.status).toBe(422);
   });
 
+  it("should return 400 for an unsupported currency", async () => {
+    const request = new NextRequest("http://localhost/api/gifts", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-user-id": "sender-123",
+        "x-user-email": "sender@example.com",
+      },
+      body: JSON.stringify({
+        recipient: "550e8400-e29b-41d4-a716-446655440000",
+        amount: 500,
+        currency: "USDC",
+      }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(data.success).toBe(false);
+    expect(data.error).toBe("Unsupported currency. Accepted: NGN, USD");
+  });
+
   it("should return 401 if not authenticated", async () => {
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",

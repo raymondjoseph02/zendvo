@@ -1,6 +1,8 @@
 import { boolean, index, integer, pgTable, real, text } from "drizzle-orm/pg-core";
 
-export const users = pgTable("User", {
+export const supportedCurrencyCodes = ["NGN", "USD"] as const;
+
+export const users = sqliteTable("User", {
   id: text("id").primaryKey(),
   email: text("email").notNull(),
   passwordHash: text("passwordHash").notNull(),
@@ -42,7 +44,7 @@ export const gifts = pgTable("Gift", {
   senderId: text("senderId"),
   recipientId: text("recipientId").notNull(),
   amount: real("amount").notNull(),
-  currency: text("currency").notNull().default("USDC"),
+  currency: text("currency").notNull().default("NGN"),
   message: text("message"),
   template: text("template"),
   status: text("status").notNull(),

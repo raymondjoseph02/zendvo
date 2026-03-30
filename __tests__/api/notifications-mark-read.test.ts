@@ -53,7 +53,7 @@ describe("POST /api/notifications/mark-read", () => {
     const res = await POST(makeRequest(undefined, null));
     expect(res.status).toBe(401);
     const body = await res.json();
-    expect(body.success).toBe(false);
+    expect(body.detail).toBeDefined();
   });
 
   test("returns 400 for invalid JSON body", async () => {
@@ -65,14 +65,14 @@ describe("POST /api/notifications/mark-read", () => {
     const res = await POST(req);
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.error).toContain("Invalid JSON");
+    expect(body.detail).toContain("Invalid JSON");
   });
 
   test("returns 400 when notificationIds is missing", async () => {
     const res = await POST(makeRequest({}));
     expect(res.status).toBe(400);
     const body = await res.json();
-    expect(body.error).toContain("notificationIds");
+    expect(body.detail).toContain("notificationIds");
   });
 
   test("returns 400 when notificationIds is empty array", async () => {
@@ -92,9 +92,7 @@ describe("POST /api/notifications/mark-read", () => {
 
   test("returns 403 when user does not own some notifications", async () => {
     mockOwnedIds(["id-1"]); // only id-1 is owned
-    const res = await POST(
-      makeRequest({ notificationIds: ["id-1", "id-2"] }),
-    );
+    const res = await POST(makeRequest({ notificationIds: ["id-1", "id-2"] }));
     expect(res.status).toBe(403);
     const body = await res.json();
     expect(body.invalidIds).toEqual(["id-2"]);
@@ -104,9 +102,7 @@ describe("POST /api/notifications/mark-read", () => {
     mockOwnedIds(["id-1", "id-2"]);
     mockUpdate(["id-1", "id-2"]);
 
-    const res = await POST(
-      makeRequest({ notificationIds: ["id-1", "id-2"] }),
-    );
+    const res = await POST(makeRequest({ notificationIds: ["id-1", "id-2"] }));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -134,11 +130,9 @@ describe("POST /api/notifications/mark-read", () => {
       }),
     });
 
-    const res = await POST(
-      makeRequest({ notificationIds: ["id-1"] }),
-    );
+    const res = await POST(makeRequest({ notificationIds: ["id-1"] }));
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.success).toBe(false);
+    expect(body.detail).toBeDefined();
   });
 });

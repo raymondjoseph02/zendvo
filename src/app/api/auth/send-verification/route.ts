@@ -8,6 +8,7 @@ import {
   checkOTPRequestRateLimitByUserId,
 } from "@/server/services/otpService";
 import { sendVerificationEmail } from "@/server/services/emailService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: Request) {
   try {
@@ -15,9 +16,11 @@ export async function POST(request: Request) {
     const { userId, email, name } = body;
 
     if (!userId || !email) {
-      return NextResponse.json(
-        { error: "userId and email are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "userId and email are required",
       );
     }
 
@@ -26,7 +29,12 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
+      );
     }
 
     if (user.status === "active") {
@@ -39,17 +47,12 @@ export async function POST(request: Request) {
     // Rate limiting: max 4 OTPs per 10 minutes per user
     const rateLimitResult = await checkOTPRequestRateLimitByUserId(userId);
     if (!rateLimitResult.allowed) {
-      console.log(
-        `[AUTH_AUDIT] OTP rate limited for user: ${userId}`,
-      );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded",
-          message: rateLimitResult.message,
-          retryAfter: Math.ceil(rateLimitResult.retryAfterMs / 1000),
-        },
-        { status: 429 },
+      console.log(`[AUTH_AUDIT] OTP rate limited for user: ${userId}`);
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Rate limit exceeded",
       );
     }
 
@@ -69,12 +72,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error in send-verification:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

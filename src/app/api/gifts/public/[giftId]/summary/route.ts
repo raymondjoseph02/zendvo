@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { calculateProcessingFee } from "@/lib/fees";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function GET(
   request: NextRequest,
@@ -35,23 +36,29 @@ export async function GET(
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     if (gift.linkExpiresAt && new Date(gift.linkExpiresAt) < new Date()) {
-      return NextResponse.json(
-        { success: false, error: "This gift link has expired" },
-        { status: 410 },
+      return createProblemDetails(
+        "about:blank",
+        "Gone",
+        410,
+        "This gift link has expired",
       );
     }
 
     if (gift.status !== "pending_review") {
-      return NextResponse.json(
-        { success: false, error: "Gift is not in pending_review status" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Gift is not in pending_review status",
       );
     }
 
@@ -75,7 +82,9 @@ export async function GET(
             hideAmount: gift.hideAmount,
             hideSender: gift.hideSender,
           },
-          unlockDatetime: gift.unlockDatetime ? gift.unlockDatetime.toISOString() : null,
+          unlockDatetime: gift.unlockDatetime
+            ? gift.unlockDatetime.toISOString()
+            : null,
           message: gift.message,
           senderName: gift.sender?.name ?? gift.senderName ?? null,
         },
@@ -84,9 +93,11 @@ export async function GET(
     );
   } catch (error) {
     console.error("Error fetching gift summary:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

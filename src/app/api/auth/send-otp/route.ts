@@ -10,6 +10,7 @@ import {
 import { sendVerificationEmail } from "@/server/services/emailService";
 import { validateEmail, sanitizeInput } from "@/lib/validation";
 import { isRateLimited } from "@/lib/rate-limiter";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,9 +18,11 @@ export async function POST(request: NextRequest) {
     const origin = request.headers.get("origin");
     const host = request.headers.get("host");
     if (origin && host && !origin.includes(host)) {
-      return NextResponse.json(
-        { success: false, error: "CSRF protection: Invalid origin" },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "CSRF protection: Invalid origin",
       );
     }
 
@@ -27,29 +30,32 @@ export async function POST(request: NextRequest) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json(
-        { success: false, error: "Email is required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Email is required",
       );
     }
 
     const sanitizedEmail = sanitizeInput(email);
 
     if (!validateEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid email format",
       );
     }
 
     // Rate Limiting: 3 requests per hour per email
     if (isRateLimited(sanitizedEmail, 3, 60 * 60 * 1000)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Too many OTP requests. Please try again later.",
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many OTP requests. Please try again later.",
       );
     }
 
@@ -58,16 +64,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
       );
     }
 
     if (user.status === "suspended") {
-      return NextResponse.json(
-        { success: false, error: "Account suspended" },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "Account suspended",
       );
     }
 
@@ -79,14 +89,11 @@ export async function POST(request: NextRequest) {
           request.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1"
         }`,
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded",
-          message: rateLimitResult.message,
-          retryAfter: Math.ceil(rateLimitResult.retryAfterMs / 1000),
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Rate limit exceeded",
       );
     }
 
@@ -101,9 +108,11 @@ export async function POST(request: NextRequest) {
 
     if (!emailResult.success) {
       console.error("Failed to send OTP email:", emailResult.error);
-      return NextResponse.json(
-        { success: false, error: "Failed to send OTP email" },
-        { status: 500 },
+      return createProblemDetails(
+        "about:blank",
+        "Internal Server Error",
+        500,
+        "Failed to send OTP email",
       );
     }
 
@@ -113,9 +122,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[SEND_OTP_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

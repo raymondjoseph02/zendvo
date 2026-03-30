@@ -50,7 +50,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Invalid Content-Type. Expected application/json");
+    expect(data.detail).toBe("Invalid Content-Type. Expected application/json");
   });
 
   it("returns 413 when the request body is too large", async () => {
@@ -63,7 +63,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(413);
-    expect(data.error).toBe("Request body too large");
+    expect(data.detail).toBe("Request body too large");
   });
 
   it("returns 403 for invalid origin", async () => {
@@ -79,7 +79,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(403);
-    expect(data.error).toBe("CSRF protection: Invalid origin");
+    expect(data.detail).toBe("CSRF protection: Invalid origin");
   });
 
   it("returns 400 when phone number is missing", async () => {
@@ -87,7 +87,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Phone number is required");
+    expect(data.detail).toBe("Phone number is required");
   });
 
   it("returns 400 for invalid phone number format", async () => {
@@ -95,7 +95,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe(
+    expect(data.detail).toBe(
       "Invalid phone number format. Please use E.164 format (e.g., +2348123456789)",
     );
   });
@@ -107,7 +107,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(429);
-    expect(data.error).toBe("Too many requests. Please try again later.");
+    expect(data.detail).toBe("Too many requests. Please try again later.");
     expect(isRateLimited).toHaveBeenCalledWith("lookup:127.0.0.1", 5, 60_000);
   });
 
@@ -120,8 +120,13 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(429);
-    expect(data.error).toBe("Too many requests. Please try again later.");
-    expect(isRateLimited).toHaveBeenNthCalledWith(2, "lookup:127.0.0.1:+2348112345678", 3, 60_000);
+    expect(data.detail).toBe("Too many requests. Please try again later.");
+    expect(isRateLimited).toHaveBeenNthCalledWith(
+      2,
+      "lookup:127.0.0.1:+2348112345678",
+      3,
+      60_000,
+    );
   });
 
   it("returns null data when no verified user matches the phone number", async () => {
@@ -199,7 +204,7 @@ describe("POST /api/users/lookup", () => {
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe("Internal server error");
+    expect(data.detail).toBe("Internal server error");
   });
 
   it("does not expose any additional user fields", async () => {

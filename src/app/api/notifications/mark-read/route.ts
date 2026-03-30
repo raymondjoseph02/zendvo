@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { notifications } from "@/lib/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { createProblemDetails } from "@/lib/api-utils";
 
 /**
  * POST /api/notifications/mark-read
@@ -13,9 +14,11 @@ export async function POST(request: NextRequest) {
   const userId = request.headers.get("x-user-id");
 
   if (!userId) {
-    return NextResponse.json(
-      { success: false, error: "Unauthorized" },
-      { status: 401 },
+    return createProblemDetails(
+      "about:blank",
+      "Unauthorized",
+      401,
+      "Unauthorized",
     );
   }
 
@@ -23,9 +26,11 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { success: false, error: "Invalid JSON body" },
-      { status: 400 },
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "Invalid JSON body",
     );
   }
 
@@ -36,13 +41,11 @@ export async function POST(request: NextRequest) {
     notificationIds.length === 0 ||
     !notificationIds.every((id) => typeof id === "string" && id.length > 0)
   ) {
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          "notificationIds must be a non-empty array of notification ID strings",
-      },
-      { status: 400 },
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "notificationIds must be a non-empty array of notification ID strings",
     );
   }
 
@@ -64,13 +67,13 @@ export async function POST(request: NextRequest) {
     const unauthorizedIds = notificationIds.filter((id) => !ownedIds.has(id));
 
     if (unauthorizedIds.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "One or more notification IDs are invalid or do not belong to you",
-          invalidIds: unauthorizedIds,
-        },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "One or more notification IDs are invalid or do not belong to you",
+        undefined,
+        { invalidIds: unauthorizedIds },
       );
     }
 
@@ -98,9 +101,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("Mark notifications read error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

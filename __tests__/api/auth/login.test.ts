@@ -139,7 +139,7 @@ describe("POST /api/auth/login", () => {
     const json = await response.json();
 
     expect(response.status).toBe(401);
-    expect(json.error).toBe("Invalid email or password");
+    expect(json.detail).toBe("Invalid email or password");
   });
 
   it("returns 401 when email is not found", async () => {
@@ -156,7 +156,7 @@ describe("POST /api/auth/login", () => {
     const json = await response.json();
 
     expect(response.status).toBe(401);
-    expect(json.error).toBe("Invalid email or password");
+    expect(json.detail).toBe("Invalid email or password");
     expect(comparePassword).not.toHaveBeenCalled();
     expect(generateRefreshToken).not.toHaveBeenCalled();
   });
@@ -185,7 +185,7 @@ describe("POST /api/auth/login", () => {
     const json = await limitedResponse.json();
 
     expect(limitedResponse.status).toBe(429);
-    expect(json.error).toContain("Too many failed login attempts");
+    expect(json.detail).toContain("Too many failed login attempts");
   });
 
   it("uses provided device_id from request body", async () => {

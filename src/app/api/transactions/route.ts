@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { paginatedResponse } from "@/lib/api-utils";
+import { createProblemDetails, paginatedResponse } from "@/lib/api-utils";
 import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq, or, desc, count } from "drizzle-orm";
@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
   // Auth — same pattern as gifts route
   const userId = request.headers.get("x-user-id");
   if (!userId) {
-    return NextResponse.json(
-      { success: false, error: "Unauthorized" },
-      { status: 401 },
+    return createProblemDetails(
+      "about:blank",
+      "Unauthorized",
+      401,
+      "Unauthorized",
     );
   }
 
@@ -29,9 +31,11 @@ export async function GET(request: NextRequest) {
   const limitParam = searchParams.get("limit") ?? "10";
 
   if (!ALLOWED_TYPES.includes(typeParam)) {
-    return NextResponse.json(
-      { success: false, error: "type must be one of: sent, received, all" },
-      { status: 400 },
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "type must be one of: sent, received, all",
     );
   }
 
@@ -39,23 +43,21 @@ export async function GET(request: NextRequest) {
     !isValidPositiveInteger(pageParam) ||
     !isValidPositiveInteger(limitParam)
   ) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "page must be >= 1 and limit must be between 1 and 100",
-      },
-      { status: 400 },
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "page must be >= 1 and limit must be between 1 and 100",
     );
   }
   const page = Number.parseInt(pageParam, 10);
   const limit = Number.parseInt(limitParam, 10);
   if (limit > 100) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "page must be >= 1 and limit must be between 1 and 100",
-      },
-      { status: 400 },
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "page must be >= 1 and limit must be between 1 and 100",
     );
   }
 

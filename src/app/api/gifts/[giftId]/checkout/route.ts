@@ -3,18 +3,21 @@ import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { initiateStripeCheckout } from "@/server/services/paymentService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ giftId: string }> }
+  { params }: { params: Promise<{ giftId: string }> },
 ) {
   try {
     const userId = request.headers.get("x-user-id");
 
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -25,28 +28,26 @@ export async function POST(
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 }
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     if (!gift.senderId || gift.senderId !== userId) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 }
-      );
+      return createProblemDetails("about:blank", "Forbidden", 403, "Forbidden");
     }
 
     // Only allow checkout initiation for gifts awaiting payment
     const allowedStatuses = ["otp_verified", "pending_review"];
     if (!allowedStatuses.includes(gift.status)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Cannot initiate checkout for gift with status: ${gift.status}`,
-        },
-        { status: 400 }
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        `Cannot initiate checkout for gift with status: ${gift.status}`,
       );
     }
 
@@ -66,6 +67,11 @@ export async function POST(
     console.error("Stripe checkout error:", error);
     const message =
       error instanceof Error ? error.message : "Internal server error";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      message,
+    );
   }
 }

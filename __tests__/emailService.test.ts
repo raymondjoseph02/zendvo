@@ -57,8 +57,8 @@ describe("Email Service", () => {
 
     const result = await sendVerificationEmail("test@example.com", "123456");
 
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("SMTP Error");
+    expect(result.detail).toBeDefined();
+    expect(result.detail).toBe("SMTP Error");
     errorSpy.mockRestore();
   });
 

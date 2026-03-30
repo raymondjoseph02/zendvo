@@ -9,6 +9,7 @@ import {
   checkOTPRequestRateLimitByUserId,
 } from "@/server/services/otpService";
 import { sendVerificationEmail } from "@/server/services/emailService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
@@ -16,9 +17,11 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await getAuthPayload(request);
     if (!payload) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -27,9 +30,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
       );
     }
 
@@ -69,14 +74,11 @@ export async function POST(request: NextRequest) {
         }`,
       );
 
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded",
-          message: "Please wait before requesting a new verification code.",
-          retryAfter: retryAfterSeconds,
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Rate limit exceeded",
       );
     }
 
@@ -88,14 +90,11 @@ export async function POST(request: NextRequest) {
           request.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1"
         }`,
       );
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Rate limit exceeded",
-          message: rateLimitResult.message,
-          retryAfter: Math.ceil(rateLimitResult.retryAfterMs / 1000),
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Rate limit exceeded",
       );
     }
 
@@ -128,13 +127,11 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error in resend-otp:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

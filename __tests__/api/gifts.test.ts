@@ -49,7 +49,11 @@ describe("POST /api/gifts", () => {
       email: "recipient@example.com",
       name: "Recipient User",
     });
-    mockInsertReturning({ id: "gift-123", slug: "abc123", shortCode: "xyz123ab" });
+    mockInsertReturning({
+      id: "gift-123",
+      slug: "abc123",
+      shortCode: "xyz123ab",
+    });
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
@@ -87,7 +91,11 @@ describe("POST /api/gifts", () => {
         "x-user-id": "sender-123",
         "x-user-email": "sender@example.com",
       },
-      body: JSON.stringify({ recipient: "nonexistent-123", amount: 100, currency: "USD" }),
+      body: JSON.stringify({
+        recipient: "nonexistent-123",
+        amount: 100,
+        currency: "USD",
+      }),
     });
 
     const response = await POST(request);
@@ -102,7 +110,11 @@ describe("POST /api/gifts", () => {
         "x-user-id": "sender-123",
         "x-user-email": "sender@example.com",
       },
-      body: JSON.stringify({ recipient: "recipient-123", amount: -100, currency: "USD" }),
+      body: JSON.stringify({
+        recipient: "recipient-123",
+        amount: -100,
+        currency: "USD",
+      }),
     });
 
     const response = await POST(request);
@@ -110,7 +122,9 @@ describe("POST /api/gifts", () => {
   });
 
   it("should return 422 if trying to send gift to self", async () => {
-    (db.query.users.findFirst as jest.Mock).mockResolvedValue({ id: "sender-123" });
+    (db.query.users.findFirst as jest.Mock).mockResolvedValue({
+      id: "sender-123",
+    });
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
@@ -119,7 +133,11 @@ describe("POST /api/gifts", () => {
         "x-user-id": "sender-123",
         "x-user-email": "sender@example.com",
       },
-      body: JSON.stringify({ recipient: "sender-123", amount: 100, currency: "USD" }),
+      body: JSON.stringify({
+        recipient: "sender-123",
+        amount: 100,
+        currency: "USD",
+      }),
     });
 
     const response = await POST(request);
@@ -145,15 +163,19 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toBe("Unsupported currency. Accepted: NGN, USD");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toBe("Unsupported currency. Accepted: NGN, USD");
   });
 
   it("should return 401 if not authenticated", async () => {
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ recipient: "recipient-123", amount: 100, currency: "USD" }),
+      body: JSON.stringify({
+        recipient: "recipient-123",
+        amount: 100,
+        currency: "USD",
+      }),
     });
 
     const response = await POST(request);
@@ -175,7 +197,7 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Recipient and amount are required");
+    expect(data.detail).toBe("Recipient and amount are required");
   });
 
   it("should return 400 for unlock_at less than 1 hour in the future", async () => {
@@ -185,7 +207,9 @@ describe("POST /api/gifts", () => {
       name: "Recipient User",
     });
 
-    const thirtyMinutesFromNow = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const thirtyMinutesFromNow = new Date(
+      Date.now() + 30 * 60 * 1000,
+    ).toISOString();
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
@@ -206,8 +230,8 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toBe("unlock_at must be at least 1 hour in the future");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toBe("unlock_at must be at least 1 hour in the future");
   });
 
   it("should return 400 for invalid unlock_at format", async () => {
@@ -236,8 +260,8 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("timezone and milliseconds");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("timezone and milliseconds");
   });
 
   it("should create a gift successfully with valid unlock_at", async () => {
@@ -246,9 +270,15 @@ describe("POST /api/gifts", () => {
       email: "recipient@example.com",
       name: "Recipient User",
     });
-    mockInsertReturning({ id: "gift-123", slug: "abc123", shortCode: "xyz123ab" });
+    mockInsertReturning({
+      id: "gift-123",
+      slug: "abc123",
+      shortCode: "xyz123ab",
+    });
 
-    const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const twoHoursFromNow = new Date(
+      Date.now() + 2 * 60 * 60 * 1000,
+    ).toISOString();
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
@@ -299,8 +329,8 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("timezone and milliseconds");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("timezone and milliseconds");
   });
 
   it("should reject incomplete ISO format for unlock_at", async () => {
@@ -329,8 +359,8 @@ describe("POST /api/gifts", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("timezone and milliseconds");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("timezone and milliseconds");
   });
 
   it("should accept valid ISO 8601 with Z timezone for unlock_at", async () => {
@@ -339,9 +369,15 @@ describe("POST /api/gifts", () => {
       email: "recipient@example.com",
       name: "Recipient User",
     });
-    mockInsertReturning({ id: "gift-123", slug: "abc123", shortCode: "xyz123ab" });
+    mockInsertReturning({
+      id: "gift-123",
+      slug: "abc123",
+      shortCode: "xyz123ab",
+    });
 
-    const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    const twoHoursFromNow = new Date(
+      Date.now() + 2 * 60 * 60 * 1000,
+    ).toISOString();
 
     const request = new NextRequest("http://localhost/api/gifts", {
       method: "POST",
@@ -372,22 +408,31 @@ describe("POST /api/gifts", () => {
       email: "recipient@example.com",
       name: "Recipient User",
     });
-    mockInsertReturning({ id: "gift-123", slug: "abc123", shortCode: "xyz123ab" });
+    mockInsertReturning({
+      id: "gift-123",
+      slug: "abc123",
+      shortCode: "xyz123ab",
+    });
 
     // Create a date 2 hours from now and format it with +01:00 timezone
     const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
     // Create a proper ISO 8601 string with offset timezone and milliseconds
     // We need to adjust the time to account for the +01:00 offset
-    const adjustedDate = new Date(twoHoursFromNow.getTime() - (1 * 60 * 60 * 1000)); // Subtract 1 hour for +01:00 offset
-    
+    const adjustedDate = new Date(
+      twoHoursFromNow.getTime() - 1 * 60 * 60 * 1000,
+    ); // Subtract 1 hour for +01:00 offset
+
     const year = adjustedDate.getUTCFullYear();
-    const month = String(adjustedDate.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(adjustedDate.getUTCDate()).padStart(2, '0');
-    const hours = String(adjustedDate.getUTCHours()).padStart(2, '0');
-    const minutes = String(adjustedDate.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(adjustedDate.getUTCSeconds()).padStart(2, '0');
-    const milliseconds = String(adjustedDate.getUTCMilliseconds()).padStart(3, '0');
-    
+    const month = String(adjustedDate.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(adjustedDate.getUTCDate()).padStart(2, "0");
+    const hours = String(adjustedDate.getUTCHours()).padStart(2, "0");
+    const minutes = String(adjustedDate.getUTCMinutes()).padStart(2, "0");
+    const seconds = String(adjustedDate.getUTCSeconds()).padStart(2, "0");
+    const milliseconds = String(adjustedDate.getUTCMilliseconds()).padStart(
+      3,
+      "0",
+    );
+
     const offsetFormat = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}+01:00`;
 
     const request = new NextRequest("http://localhost/api/gifts", {

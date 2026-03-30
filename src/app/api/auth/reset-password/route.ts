@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { validatePassword } from "@/lib/validation";
 import { sendPasswordResetConfirmationEmail } from "@/server/services/emailService";
+import { createProblemDetails } from "@/lib/api-utils";
 import {
   completePasswordReset,
   findPasswordResetByToken,
@@ -16,55 +17,60 @@ export async function POST(request: NextRequest) {
     const nextPassword = newPassword ?? password;
 
     if (!token || !nextPassword) {
-      return NextResponse.json(
-        { success: false, error: "Token and new password are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Token and new password are required",
       );
     }
 
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(token)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid token format" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid token format",
       );
     }
 
     if (!validatePassword(nextPassword)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Password too weak",
-          details: {
-            message:
-              "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
-          },
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Password too weak",
       );
     }
 
     const resetRequest = await findPasswordResetByToken(token);
 
     if (!resetRequest) {
-      return NextResponse.json(
-        { success: false, error: "Invalid or expired token" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid or expired token",
       );
     }
 
     if (resetRequest.usedAt) {
-      return NextResponse.json(
-        { success: false, error: "Token has already been used" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Token has already been used",
       );
     }
 
     if (new Date() > resetRequest.expiresAt) {
-      return NextResponse.json(
-        { success: false, error: "Token has expired" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Token has expired",
       );
     }
 
@@ -91,9 +97,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[RESET_PASSWORD_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

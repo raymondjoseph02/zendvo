@@ -15,6 +15,7 @@ import { isRateLimited } from "@/lib/rate-limiter";
 import { validateHoneypot } from "@/lib/honeypot";
 import { generateUniqueSlug } from "@/lib/slug";
 import { generateUniqueShortCode } from "@/lib/shortCode";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const MAX_MESSAGE_LENGTH = 500;
 
@@ -25,9 +26,11 @@ export async function POST(request: NextRequest) {
       request.headers.get("x-real-ip") ??
       "unknown";
     if (isRateLimited(ip, 10, 60_000)) {
-      return NextResponse.json(
-        { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many requests. Please try again later.",
       );
     }
 
@@ -57,40 +60,38 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!recipientId || !amount || !senderName || !senderEmail) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "recipientId, amount, senderName, and senderEmail are required",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "recipientId, amount, senderName, and senderEmail are required",
       );
     }
 
     if (typeof amount !== "number" || !validateAmount(amount)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Amount must be a positive number not exceeding 10,000",
-        },
-        { status: 422 },
+      return createProblemDetails(
+        "about:blank",
+        "Unprocessable Entity",
+        422,
+        "Amount must be a positive number not exceeding 10,000",
       );
     }
 
     if (typeof currency !== "string" || !validateCurrency(currency)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Unsupported currency. Accepted: ${supportedCurrencyCodes.join(", ")}`,
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        `Unsupported currency. Accepted: ${supportedCurrencyCodes.join(", ")}`,
       );
     }
 
     if (typeof senderEmail !== "string" || !validateEmail(senderEmail)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid sender email address" },
-        { status: 422 },
+      return createProblemDetails(
+        "about:blank",
+        "Unprocessable Entity",
+        422,
+        "Invalid sender email address",
       );
     }
 
@@ -98,21 +99,19 @@ export async function POST(request: NextRequest) {
       try {
         const utcDate = convertToUTCDate(unlockDatetime);
         if (!utcDate || !validateFutureDatetime(utcDate)) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: "Delivery datetime must be a valid ISO 8601 date string with timezone in the future",
-            },
-            { status: 422 },
+          return createProblemDetails(
+            "about:blank",
+            "Unprocessable Entity",
+            422,
+            "Delivery datetime must be a valid ISO 8601 date string with timezone in the future",
           );
         }
       } catch (error) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: error instanceof Error ? error.message : "Invalid delivery datetime format",
-          },
-          { status: 422 },
+        return createProblemDetails(
+          "about:blank",
+          "Unprocessable Entity",
+          422,
+          error,
         );
       }
     }
@@ -122,12 +121,11 @@ export async function POST(request: NextRequest) {
       typeof message === "string" &&
       message.length > MAX_MESSAGE_LENGTH
     ) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Message must not exceed ${MAX_MESSAGE_LENGTH} characters`,
-        },
-        { status: 422 },
+      return createProblemDetails(
+        "about:blank",
+        "Unprocessable Entity",
+        422,
+        `Message must not exceed ${MAX_MESSAGE_LENGTH} characters`,
       );
     }
 
@@ -136,9 +134,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!recipientUser) {
-      return NextResponse.json(
-        { success: false, error: "Recipient not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Recipient not found",
       );
     }
 
@@ -155,13 +155,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (duplicate) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "A similar gift was recently submitted. Please wait before trying again.",
-        },
-        { status: 409 },
+      return createProblemDetails(
+        "about:blank",
+        "Conflict",
+        409,
+        "A similar gift was recently submitted. Please wait before trying again.",
       );
     }
 
@@ -195,14 +193,24 @@ export async function POST(request: NextRequest) {
       .returning();
 
     return NextResponse.json(
-      { success: true, data: { giftId: newGift.id, status: "pending_review", slug: newGift.slug, shortCode: newGift.shortCode } },
+      {
+        success: true,
+        data: {
+          giftId: newGift.id,
+          status: "pending_review",
+          slug: newGift.slug,
+          shortCode: newGift.shortCode,
+        },
+      },
       { status: 201 },
     );
   } catch (error) {
     console.error("[PUBLIC_GIFT_CREATE_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

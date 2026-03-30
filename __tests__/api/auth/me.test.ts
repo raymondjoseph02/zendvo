@@ -44,8 +44,8 @@ describe("GET /api/auth/me", () => {
     const json = await response.json();
 
     expect(response.status).toBe(401);
-    expect(json.success).toBe(false);
-    expect(json.error).toBe("Unauthorized");
+    expect(json.detail).toBeDefined();
+    expect(json.detail).toBe("Unauthorized");
   });
 
   it("returns phone_last_4 and never includes phone fields", async () => {

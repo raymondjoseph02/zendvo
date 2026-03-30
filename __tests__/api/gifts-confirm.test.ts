@@ -27,7 +27,9 @@ jest.mock("@/server/services/notificationService", () => ({
 
 jest.mock("@/server/services/emailService", () => ({
   sendGiftCompletionToSender: jest.fn(() => Promise.resolve({ success: true })),
-  sendGiftNotificationToRecipient: jest.fn(() => Promise.resolve({ success: true })),
+  sendGiftNotificationToRecipient: jest.fn(() =>
+    Promise.resolve({ success: true }),
+  ),
 }));
 
 jest.mock("@/lib/tokens", () => ({
@@ -35,26 +37,30 @@ jest.mock("@/lib/tokens", () => ({
 }));
 
 jest.mock("@/lib/paystack/api", () => ({
-  verifyPayment: jest.fn(() => Promise.resolve({
-    success: true,
-    status: "success",
-    reference: "paystack-ref-123",
-    amount: 100,
-    currency: "NGN",
-    paidAt: "2024-01-01T00:00:00Z",
-  })),
+  verifyPayment: jest.fn(() =>
+    Promise.resolve({
+      success: true,
+      status: "success",
+      reference: "paystack-ref-123",
+      amount: 100,
+      currency: "NGN",
+      paidAt: "2024-01-01T00:00:00Z",
+    }),
+  ),
   isPaymentSuccessful: jest.fn((status) => status === "success"),
 }));
 
 jest.mock("@/lib/stripe/client", () => ({
-  verifyPayment: jest.fn(() => Promise.resolve({
-    success: true,
-    status: "succeeded",
-    reference: "pi_stripe_123",
-    amount: 100,
-    currency: "USD",
-    paidAt: "2024-01-01T00:00:00Z",
-  })),
+  verifyPayment: jest.fn(() =>
+    Promise.resolve({
+      success: true,
+      status: "succeeded",
+      reference: "pi_stripe_123",
+      amount: 100,
+      currency: "USD",
+      paidAt: "2024-01-01T00:00:00Z",
+    }),
+  ),
   isPaymentSuccessful: jest.fn((status) => status === "succeeded"),
 }));
 
@@ -74,15 +80,26 @@ const mockGift = {
   shareLinkToken: null,
   completedAt: null,
   unlockDatetime: null,
-  sender: { id: "sender-123", name: "John Sender", email: "sender@example.com" },
-  recipient: { id: "recipient-456", name: "Jane Recipient", email: "recipient@example.com" },
+  sender: {
+    id: "sender-123",
+    name: "John Sender",
+    email: "sender@example.com",
+  },
+  recipient: {
+    id: "recipient-456",
+    name: "Jane Recipient",
+    email: "recipient@example.com",
+  },
 };
 
 function makeRequest(giftId: string) {
-  return new NextRequest(`http://localhost/api/gifts/public/${giftId}/confirm`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-  });
+  return new NextRequest(
+    `http://localhost/api/gifts/public/${giftId}/confirm`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+    },
+  );
 }
 
 describe("POST /api/gifts/public/:giftId/confirm", () => {
@@ -118,7 +135,10 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
   });
 
   it("should return 409 if gift has already been confirmed", async () => {
-    (db.query.gifts.findFirst as jest.Mock).mockResolvedValue({ ...mockGift, status: "completed" });
+    (db.query.gifts.findFirst as jest.Mock).mockResolvedValue({
+      ...mockGift,
+      status: "completed",
+    });
 
     const request = makeRequest("gift-123");
     const response = await POST(request, {
@@ -129,7 +149,10 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
   });
 
   it("should return 400 if gift status is not pending_review", async () => {
-    (db.query.gifts.findFirst as jest.Mock).mockResolvedValue({ ...mockGift, status: "pending_otp" });
+    (db.query.gifts.findFirst as jest.Mock).mockResolvedValue({
+      ...mockGift,
+      status: "pending_otp",
+    });
 
     const request = makeRequest("gift-123");
     const response = await POST(request, {
@@ -142,7 +165,9 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
   it("should return 422 if insufficient balance", async () => {
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(mockGift);
 
-    const { processGiftTransaction } = jest.requireMock("@/server/services/transactionService");
+    const { processGiftTransaction } = jest.requireMock(
+      "@/server/services/transactionService",
+    );
     processGiftTransaction.mockRejectedValue(new Error("Insufficient balance"));
 
     const request = makeRequest("gift-123");
@@ -154,7 +179,9 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
   });
 
   it("should return 500 on internal server error", async () => {
-    (db.query.gifts.findFirst as jest.Mock).mockRejectedValue(new Error("Database connection failed"));
+    (db.query.gifts.findFirst as jest.Mock).mockRejectedValue(
+      new Error("Database connection failed"),
+    );
 
     const request = makeRequest("gift-123");
     const response = await POST(request, {
@@ -214,7 +241,8 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     };
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(giftWithPayment);
 
-    const { verifyPayment, isPaymentSuccessful } = jest.requireMock("@/lib/paystack/api");
+    const { verifyPayment, isPaymentSuccessful } =
+      jest.requireMock("@/lib/paystack/api");
     verifyPayment.mockResolvedValueOnce({
       success: true,
       status: "failed",
@@ -231,8 +259,8 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     const data = await response.json();
 
     expect(response.status).toBe(402);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("Payment verification failed");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("Payment verification failed");
   });
 
   it("should return 402 if Stripe payment verification fails", async () => {
@@ -243,7 +271,9 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     };
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(giftWithPayment);
 
-    const { verifyPayment, isPaymentSuccessful } = jest.requireMock("@/lib/stripe/client");
+    const { verifyPayment, isPaymentSuccessful } = jest.requireMock(
+      "@/lib/stripe/client",
+    );
     verifyPayment.mockResolvedValueOnce({
       success: true,
       status: "requires_payment_method",
@@ -260,8 +290,8 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     const data = await response.json();
 
     expect(response.status).toBe(402);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("Payment verification failed");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("Payment verification failed");
   });
 
   it("should return 400 for unsupported payment provider", async () => {
@@ -279,8 +309,8 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toBe("Unsupported payment provider");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toBe("Unsupported payment provider");
   });
 
   it("should return 402 if payment verification throws an error", async () => {
@@ -301,7 +331,7 @@ describe("POST /api/gifts/public/:giftId/confirm", () => {
     const data = await response.json();
 
     expect(response.status).toBe(402);
-    expect(data.success).toBe(false);
-    expect(data.error).toContain("Payment verification failed");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toContain("Payment verification failed");
   });
 });

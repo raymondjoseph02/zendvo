@@ -26,7 +26,7 @@ describe("POST /api/auth/verify-email", () => {
     const res = await POST(req);
     const json = await res.json();
     expect(res.status).toBe(400);
-    expect(json.error).toContain("Invalid OTP format");
+    expect(json.detail).toContain("Invalid OTP format");
   });
 
   it("should return success if verification succeeds", async () => {

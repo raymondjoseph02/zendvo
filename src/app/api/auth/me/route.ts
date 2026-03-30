@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getAuthPayload } from "@/lib/auth-session";
+import { createProblemDetails } from "@/lib/api-utils";
 
 type AuthMeUser = {
   id: string;
@@ -20,9 +21,11 @@ export async function GET(request: NextRequest) {
   try {
     const payload = await getAuthPayload(request);
     if (!payload) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -41,9 +44,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
       );
     }
 
@@ -68,13 +73,11 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error("Error in auth/me:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

@@ -8,6 +8,7 @@ import {
   generateRefreshToken,
 } from "@/lib/tokens";
 import { computeFingerprint } from "@/lib/fingerprint";
+import { createProblemDetails } from "@/lib/api-utils";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -27,17 +28,21 @@ export async function POST(request: NextRequest) {
     }
 
     if (!refreshToken) {
-      return NextResponse.json(
-        { success: false, error: "Refresh token is required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Refresh token is required",
       );
     }
 
     const payload = await verifyRefreshToken(refreshToken);
     if (!payload) {
-      return NextResponse.json(
-        { success: false, error: "Invalid refresh token" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid refresh token",
       );
     }
 
@@ -54,16 +59,20 @@ export async function POST(request: NextRequest) {
         .set({ revokedAt: new Date() })
         .where(eq(refreshTokens.userId, payload.userId));
 
-      return NextResponse.json(
-        { success: false, error: "Refresh token has been used or is invalid" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Refresh token has been used or is invalid",
       );
     }
 
     if (new Date() > storedToken.expiresAt) {
-      return NextResponse.json(
-        { success: false, error: "Token has expired" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Token has expired",
       );
     }
 
@@ -84,9 +93,11 @@ export async function POST(request: NextRequest) {
           .set({ revokedAt: new Date() })
           .where(eq(refreshTokens.userId, payload.userId));
 
-        return NextResponse.json(
-          { success: false, error: "Unauthorized: session fingerprint mismatch" },
-          { status: 401 },
+        return createProblemDetails(
+          "about:blank",
+          "Unauthorized",
+          401,
+          "Unauthorized: session fingerprint mismatch",
         );
       }
     }
@@ -143,9 +154,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[REFRESH_TOKEN_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

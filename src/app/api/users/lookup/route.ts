@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { isRateLimited } from "@/lib/rate-limiter";
 import { sanitizePhoneNumber, validateE164PhoneNumber } from "@/lib/validation";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const LOOKUP_RATE_LIMIT = 5;
 const LOOKUP_RATE_WINDOW_MS = 60_000;
@@ -30,10 +31,7 @@ function splitNameParts(name: string | null): {
     };
   }
 
-  const parts = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const parts = name.trim().split(/\s+/).filter(Boolean);
 
   if (parts.length === 0) {
     return {
@@ -52,37 +50,47 @@ export async function POST(request: NextRequest) {
   try {
     const contentType = request.headers.get("content-type");
     if (!contentType?.includes("application/json")) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Invalid Content-Type. Expected application/json",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid Content-Type. Expected application/json",
       );
     }
 
     const contentLength = request.headers.get("content-length");
-    if (contentLength && Number.parseInt(contentLength, 10) > MAX_REQUEST_BODY_BYTES) {
-      return NextResponse.json(
-        { success: false, error: "Request body too large" },
-        { status: 413 },
+    if (
+      contentLength &&
+      Number.parseInt(contentLength, 10) > MAX_REQUEST_BODY_BYTES
+    ) {
+      return createProblemDetails(
+        "about:blank",
+        "Payload Too Large",
+        413,
+        "Request body too large",
       );
     }
 
     const origin = request.headers.get("origin");
     const host = request.headers.get("host");
     if (origin && host && !origin.includes(host)) {
-      return NextResponse.json(
-        { success: false, error: "CSRF protection: Invalid origin" },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "CSRF protection: Invalid origin",
       );
     }
 
     const ip = getClientIp(request);
-    if (isRateLimited(`lookup:${ip}`, LOOKUP_RATE_LIMIT, LOOKUP_RATE_WINDOW_MS)) {
-      return NextResponse.json(
-        { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 },
+    if (
+      isRateLimited(`lookup:${ip}`, LOOKUP_RATE_LIMIT, LOOKUP_RATE_WINDOW_MS)
+    ) {
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many requests. Please try again later.",
       );
     }
 
@@ -91,20 +99,20 @@ export async function POST(request: NextRequest) {
       typeof body?.phoneNumber === "string" ? body.phoneNumber : undefined;
 
     if (!phoneNumber) {
-      return NextResponse.json(
-        { success: false, error: "Phone number is required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Phone number is required",
       );
     }
 
     if (!validateE164PhoneNumber(phoneNumber)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            "Invalid phone number format. Please use E.164 format (e.g., +2348123456789)",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid phone number format. Please use E.164 format (e.g., +2348123456789)",
       );
     }
 
@@ -117,9 +125,11 @@ export async function POST(request: NextRequest) {
         LOOKUP_PHONE_RATE_WINDOW_MS,
       )
     ) {
-      return NextResponse.json(
-        { success: false, error: "Too many requests. Please try again later." },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many requests. Please try again later.",
       );
     }
 
@@ -134,10 +144,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { success: true, data: null },
-        { status: 200 },
-      );
+      return NextResponse.json({ success: true, data: null }, { status: 200 });
     }
 
     return NextResponse.json(
@@ -149,9 +156,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[USER_LOOKUP_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

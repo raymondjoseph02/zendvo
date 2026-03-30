@@ -1,4 +1,8 @@
-import { consumeRateLimit, getRateLimitStatusForKey, isRateLimited } from "@/lib/rate-limiter";
+import {
+  consumeRateLimit,
+  getRateLimitStatusForKey,
+  isRateLimited,
+} from "@/lib/rate-limiter";
 import { middleware } from "@/middleware";
 import { NextRequest } from "next/server";
 

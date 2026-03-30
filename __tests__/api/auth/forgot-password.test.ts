@@ -35,19 +35,21 @@ describe("POST /api/auth/forgot-password", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (isRateLimited as jest.Mock).mockReturnValue(false);
-    (db.transaction as jest.Mock).mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
-      const tx = {
-        update: jest.fn(() => ({
-          set: jest.fn(() => ({
-            where: jest.fn(() => Promise.resolve()),
+    (db.transaction as jest.Mock).mockImplementation(
+      async (cb: (tx: unknown) => Promise<void>) => {
+        const tx = {
+          update: jest.fn(() => ({
+            set: jest.fn(() => ({
+              where: jest.fn(() => Promise.resolve()),
+            })),
           })),
-        })),
-        insert: jest.fn(() => ({
-          values: jest.fn(() => Promise.resolve()),
-        })),
-      };
-      await cb(tx);
-    });
+          insert: jest.fn(() => ({
+            values: jest.fn(() => Promise.resolve()),
+          })),
+        };
+        await cb(tx);
+      },
+    );
   });
 
   it("returns 400 when email is missing", async () => {
@@ -88,7 +90,9 @@ describe("POST /api/auth/forgot-password", () => {
   });
 
   it("returns 500 on db error", async () => {
-    (db.query.users.findFirst as jest.Mock).mockRejectedValue(new Error("DB down"));
+    (db.query.users.findFirst as jest.Mock).mockRejectedValue(
+      new Error("DB down"),
+    );
     const res = await POST(makeRequest({ email: "alice@zendvo.com" }));
     expect(res.status).toBe(500);
   });

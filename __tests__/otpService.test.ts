@@ -65,11 +65,13 @@ describe("OTP Service", () => {
 
   describe("verifyOTP", () => {
     it("should fail if no verification found", async () => {
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       const result = await verifyOTP("user-123", "123456");
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.message).toContain("No verification code found");
     });
 
@@ -83,7 +85,7 @@ describe("OTP Service", () => {
 
       const result = await verifyOTP("user-123", "123456");
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.message).toContain("expired");
     });
   });
@@ -104,14 +106,17 @@ describe("OTP Service", () => {
     };
 
     it("should fail if otpHash is null", async () => {
-      const result = await verifyGiftOTP({ ...validGift, otpHash: null }, "123456");
-      expect(result.success).toBe(false);
+      const result = await verifyGiftOTP(
+        { ...validGift, otpHash: null },
+        "123456",
+      );
+      expect(result.detail).toBeDefined();
     });
 
     it("should increment attempts on invalid OTP", async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
       const result = await verifyGiftOTP(validGift, "000000");
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(db.update).toHaveBeenCalled();
     });
   });

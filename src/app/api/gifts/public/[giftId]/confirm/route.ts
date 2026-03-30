@@ -5,12 +5,19 @@ import { eq } from "drizzle-orm";
 import { processGiftTransaction } from "@/server/services/transactionService";
 import { notifyGiftConfirmed } from "@/server/services/notificationService";
 import { validateCurrency } from "@/lib/validation";
+import { createProblemDetails } from "@/lib/api-utils";
 import {
   sendGiftCompletionToSender,
   sendGiftNotificationToRecipient,
 } from "@/server/services/emailService";
-import { verifyPayment as verifyPaystackPayment, isPaymentSuccessful as isPaystackPaymentSuccessful } from "@/lib/paystack/api";
-import { verifyPayment as verifyStripePayment, isPaymentSuccessful as isStripePaymentSuccessful } from "@/lib/stripe/client";
+import {
+  verifyPayment as verifyPaystackPayment,
+  isPaymentSuccessful as isPaystackPaymentSuccessful,
+} from "@/lib/paystack/api";
+import {
+  verifyPayment as verifyStripePayment,
+  isPaymentSuccessful as isStripePaymentSuccessful,
+} from "@/lib/stripe/client";
 
 export async function POST(
   request: NextRequest,
@@ -20,7 +27,8 @@ export async function POST(
     const { giftId } = await params;
 
     const body = await request.json().catch(() => ({}));
-    const blockchainTxHash = body.blockchain_tx_hash || body.blockchainTxHash || null;
+    const blockchainTxHash =
+      body.blockchain_tx_hash || body.blockchainTxHash || null;
 
     const gift = await db.query.gifts.findFirst({
       where: eq(gifts.id, giftId),
@@ -31,40 +39,37 @@ export async function POST(
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     if (gift.status !== "pending_review") {
       if (gift.status === "completed") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Gift has already been confirmed",
-            status: gift.status,
-          },
-          { status: 409 },
+        return createProblemDetails(
+          "about:blank",
+          "Conflict",
+          409,
+          "Gift has already been confirmed",
         );
       }
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Gift cannot be confirmed. Current status: ${gift.status}. Expected: pending_review`,
-          status: gift.status,
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        `Gift cannot be confirmed. Current status: ${gift.status}. Expected: pending_review`,
       );
     }
 
     if (!validateCurrency(gift.currency)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unsupported currency. Accepted: NGN, USD",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Unsupported currency. Accepted: NGN, USD",
       );
     }
 
@@ -75,26 +80,32 @@ export async function POST(
         let isPaymentSuccessful;
 
         if (gift.paymentProvider === "paystack") {
-          verificationResult = await verifyPaystackPayment(gift.paymentReference);
-          isPaymentSuccessful = isPaystackPaymentSuccessful(verificationResult.status);
+          verificationResult = await verifyPaystackPayment(
+            gift.paymentReference,
+          );
+          isPaymentSuccessful = isPaystackPaymentSuccessful(
+            verificationResult.status,
+          );
         } else if (gift.paymentProvider === "stripe") {
           verificationResult = await verifyStripePayment(gift.paymentReference);
-          isPaymentSuccessful = isStripePaymentSuccessful(verificationResult.status);
+          isPaymentSuccessful = isStripePaymentSuccessful(
+            verificationResult.status,
+          );
         } else {
-          return NextResponse.json(
-            { success: false, error: "Unsupported payment provider" },
-            { status: 400 },
+          return createProblemDetails(
+            "about:blank",
+            "Bad Request",
+            400,
+            "Unsupported payment provider",
           );
         }
 
         if (!isPaymentSuccessful) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Payment verification failed. Payment status: ${verificationResult.status}`,
-              paymentStatus: verificationResult.status,
-            },
-            { status: 402 },
+          return createProblemDetails(
+            "about:blank",
+            "Payment Required",
+            402,
+            `Payment verification failed. Payment status: ${verificationResult.status}`,
           );
         }
 
@@ -105,12 +116,11 @@ export async function POST(
           .where(eq(gifts.id, giftId));
       } catch (error) {
         console.error("Payment verification error:", error);
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Payment verification failed. Please try again.",
-          },
-          { status: 402 },
+        return createProblemDetails(
+          "about:blank",
+          "Payment Required",
+          402,
+          "Payment verification failed. Please try again.",
         );
       }
     }
@@ -198,23 +208,24 @@ export async function POST(
       error instanceof Error &&
       error.message === "Unsupported currency. Accepted: NGN, USD"
     ) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 400 },
-      );
+      return createProblemDetails("about:blank", "Bad Request", 400, error);
     }
     if (
       error instanceof Error &&
       error.message.includes("Insufficient balance")
     ) {
-      return NextResponse.json(
-        { success: false, error: "Insufficient balance to send gift" },
-        { status: 422 },
+      return createProblemDetails(
+        "about:blank",
+        "Unprocessable Entity",
+        422,
+        "Insufficient balance to send gift",
       );
     }
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

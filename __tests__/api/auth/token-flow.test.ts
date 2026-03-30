@@ -27,17 +27,19 @@ jest.mock("@/lib/tokens", () => ({
 describe("Token Flow Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (db.transaction as jest.Mock).mockImplementation(async (cb: (tx: unknown) => Promise<void>) => {
-      const tx = {
-        delete: jest.fn(() => ({
-          where: jest.fn(() => Promise.resolve()),
-        })),
-        insert: jest.fn(() => ({
-          values: jest.fn(() => Promise.resolve()),
-        })),
-      };
-      await cb(tx);
-    });
+    (db.transaction as jest.Mock).mockImplementation(
+      async (cb: (tx: unknown) => Promise<void>) => {
+        const tx = {
+          delete: jest.fn(() => ({
+            where: jest.fn(() => Promise.resolve()),
+          })),
+          insert: jest.fn(() => ({
+            values: jest.fn(() => Promise.resolve()),
+          })),
+        };
+        await cb(tx);
+      },
+    );
   });
 
   describe("POST /api/auth/refresh", () => {
@@ -69,7 +71,11 @@ describe("Token Flow Tests", () => {
     });
 
     it("should return 401 for expired token", async () => {
-      (verifyRefreshToken as jest.Mock).mockReturnValue({ userId: "1", email: "a@b.com", role: "Sender" });
+      (verifyRefreshToken as jest.Mock).mockReturnValue({
+        userId: "1",
+        email: "a@b.com",
+        role: "Sender",
+      });
       (db.query.refreshTokens.findFirst as jest.Mock).mockResolvedValue({
         id: "tok-1",
         expiresAt: new Date(Date.now() - 10000),

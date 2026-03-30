@@ -46,15 +46,15 @@ describe("sendOTP - Phone Number Validation", () => {
 
     for (const phoneNumber of invalidNumbers) {
       const result = await sendOTP(phoneNumber);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe("INVALID_PHONE_FORMAT");
+      expect(result.detail).toBeDefined();
+      expect(result.detail).toBe("INVALID_PHONE_FORMAT");
     }
   });
 
   it("should accept and sanitize valid Nigerian phone numbers", async () => {
     const testCases = [
       "08123456789",
-      "09012345678", 
+      "09012345678",
       "08098765432",
       "+2348123456789",
       " 081-234-56789 ",
@@ -70,7 +70,7 @@ describe("sendOTP - Phone Number Validation", () => {
     for (const phoneNumber of testCases) {
       const result = await sendOTP(phoneNumber);
       expect(result.success).toBe(true);
-      
+
       // Verify the phone number was properly sanitized in the database query
       expect(db.query.users.findFirst).toHaveBeenCalledWith({
         where: eq(users.phoneNumber, expect.stringMatching(/^\+234\d{10}$/)),
@@ -81,7 +81,7 @@ describe("sendOTP - Phone Number Validation", () => {
   it("should accept international phone numbers", async () => {
     const testCases = [
       "+447911234567",
-      "+15551234567", 
+      "+15551234567",
       "+447911-234-567",
       "+1 (555) 123-4567",
     ];
@@ -95,7 +95,7 @@ describe("sendOTP - Phone Number Validation", () => {
     for (const phoneNumber of testCases) {
       const result = await sendOTP(phoneNumber);
       expect(result.success).toBe(true);
-      
+
       // Verify the phone number was properly sanitized in the database query
       expect(db.query.users.findFirst).toHaveBeenCalledWith({
         where: eq(users.phoneNumber, expect.stringMatching(/^\+\d{7,15}$/)),
@@ -108,9 +108,9 @@ describe("sendOTP - Phone Number Validation", () => {
     (db.query.users.findFirst as jest.Mock).mockResolvedValue(null);
 
     const result = await sendOTP("+2348123456789");
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("USER_NOT_FOUND");
+
+    expect(result.detail).toBeDefined();
+    expect(result.detail).toBe("USER_NOT_FOUND");
     expect(result.message).toBe("User not found with this phone number");
   });
 
@@ -122,20 +122,22 @@ describe("sendOTP - Phone Number Validation", () => {
     });
 
     const result = await sendOTP("+2348123456789");
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("ACCOUNT_SUSPENDED");
+
+    expect(result.detail).toBeDefined();
+    expect(result.detail).toBe("ACCOUNT_SUSPENDED");
     expect(result.message).toBe("Account suspended");
   });
 
   it("should handle database errors gracefully", async () => {
     // Mock database error
-    (db.query.users.findFirst as jest.Mock).mockRejectedValue(new Error("Database error"));
+    (db.query.users.findFirst as jest.Mock).mockRejectedValue(
+      new Error("Database error"),
+    );
 
     const result = await sendOTP("+2348123456789");
-    
-    expect(result.success).toBe(false);
-    expect(result.error).toBe("INTERNAL_ERROR");
+
+    expect(result.detail).toBeDefined();
+    expect(result.detail).toBe("INTERNAL_ERROR");
     expect(result.message).toBe("Internal server error");
   });
 });

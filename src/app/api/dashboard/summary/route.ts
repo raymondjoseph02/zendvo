@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db/drizzle";
 import { wallets, gifts } from "@/lib/db/schema";
 import { eq, or, sql, and, ne } from "drizzle-orm";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function GET(request: NextRequest) {
   const userId = request.headers.get("x-user-id");
 
   if (!userId) {
-    return NextResponse.json(
-      { success: false, error: "Unauthorized" },
-      { status: 401 },
+    return createProblemDetails(
+      "about:blank",
+      "Unauthorized",
+      401,
+      "Unauthorized",
     );
   }
 
@@ -66,9 +69,11 @@ export async function GET(request: NextRequest) {
     );
   } catch (error) {
     console.error("Dashboard summary error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

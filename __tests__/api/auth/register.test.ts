@@ -97,7 +97,7 @@ describe("POST /api/auth/register", () => {
     const data = await response.json();
 
     expect(response.status).toBe(409);
-    expect(data.error).toBe("Email already registered");
+    expect(data.detail).toBe("Email already registered");
     expect(createUser).not.toHaveBeenCalled();
   });
 
@@ -115,7 +115,7 @@ describe("POST /api/auth/register", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Invalid email format");
+    expect(data.detail).toBe("Invalid email format");
   });
 
   it("should return 400 for weak password", async () => {
@@ -132,7 +132,7 @@ describe("POST /api/auth/register", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Password too weak");
+    expect(data.detail).toBe("Password too weak");
   });
 
   it("should return 400 if email or password is missing", async () => {

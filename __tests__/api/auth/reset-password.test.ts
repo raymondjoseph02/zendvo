@@ -44,10 +44,13 @@ describe("POST /api/auth/reset-password", () => {
       user: { id: "user-123", email: "test@example.com", name: "Test User" },
     });
 
-    const request = new NextRequest("http://localhost/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token: validToken, newPassword: validPassword }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token: validToken, newPassword: validPassword }),
+      },
+    );
 
     const response = await POST(request);
     const data = await response.json();
@@ -67,32 +70,38 @@ describe("POST /api/auth/reset-password", () => {
   });
 
   it("should return 400 for invalid token format", async () => {
-    const request = new NextRequest("http://localhost/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({
-        token: "invalid-token",
-        newPassword: validPassword,
-      }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          token: "invalid-token",
+          newPassword: validPassword,
+        }),
+      },
+    );
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Invalid token format");
+    expect(data.detail).toBe("Invalid token format");
   });
 
   it("should return 400 for weak password", async () => {
-    const request = new NextRequest("http://localhost/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token: validToken, newPassword: "weak" }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token: validToken, newPassword: "weak" }),
+      },
+    );
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Password too weak");
+    expect(data.detail).toBe("Password too weak");
   });
 
   it("should return 400 if token is expired", async () => {
@@ -104,16 +113,19 @@ describe("POST /api/auth/reset-password", () => {
       user: { id: "user-123", email: "test@example.com", name: "Test User" },
     });
 
-    const request = new NextRequest("http://localhost/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token: validToken, newPassword: validPassword }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token: validToken, newPassword: validPassword }),
+      },
+    );
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Token has expired");
+    expect(data.detail).toBe("Token has expired");
   });
 
   it("should return 400 if token has already been used", async () => {
@@ -125,15 +137,18 @@ describe("POST /api/auth/reset-password", () => {
       user: { id: "user-123", email: "test@example.com", name: "Test User" },
     });
 
-    const request = new NextRequest("http://localhost/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify({ token: validToken, newPassword: validPassword }),
-    });
+    const request = new NextRequest(
+      "http://localhost/api/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify({ token: validToken, newPassword: validPassword }),
+      },
+    );
 
     const response = await POST(request);
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe("Token has already been used");
+    expect(data.detail).toBe("Token has already been used");
   });
 });

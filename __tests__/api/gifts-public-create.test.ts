@@ -48,8 +48,8 @@ describe("POST /api/gifts/public", () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.error).toBe("Unsupported currency. Accepted: NGN, USD");
+    expect(data.detail).toBeDefined();
+    expect(data.detail).toBe("Unsupported currency. Accepted: NGN, USD");
     expect(db.query.users.findFirst).not.toHaveBeenCalled();
   });
 });

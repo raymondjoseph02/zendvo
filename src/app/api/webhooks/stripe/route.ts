@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe/client";
 import Stripe from "stripe";
+import { createProblemDetails } from "@/lib/api-utils";
 
 /**
  * Stripe Webhook Handler
- * 
+ *
  * This endpoint receives events from Stripe.
  * It cryptographically verifies the stripe-signature header
  * using Stripe's constructEvent method to ensure authenticity.
@@ -16,17 +17,21 @@ export async function POST(req: NextRequest) {
 
     if (!webhookSecret) {
       console.error("[STRIPE_WEBHOOK] STRIPE_WEBHOOK_SECRET is not configured");
-      return NextResponse.json(
-        { error: "Webhook secret not configured" },
-        { status: 500 }
+      return createProblemDetails(
+        "about:blank",
+        "Internal Server Error",
+        500,
+        "Webhook secret not configured",
       );
     }
 
     if (!signature) {
       console.warn("[STRIPE_WEBHOOK] Missing stripe-signature header");
-      return NextResponse.json(
-        { error: "Missing signature" },
-        { status: 401 }
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Missing signature",
       );
     }
 
@@ -37,16 +42,14 @@ export async function POST(req: NextRequest) {
 
     try {
       // Use Stripe's official constructEvent method to verify the signature
-      event = stripe.webhooks.constructEvent(
-        rawBody,
-        signature,
-        webhookSecret
-      );
+      event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
     } catch (err) {
       console.warn("[STRIPE_WEBHOOK] Signature verification failed:", err);
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 401 }
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid signature",
       );
     }
 
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
      * - payment_intent.payment_failed: Payment failed
      * - checkout.session.completed: Checkout was successful
      */
-    
+
     // TODO: Implement specific event handling logic
     // Example:
     // if (event.type === 'payment_intent.succeeded') {
@@ -70,9 +73,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     console.error("[STRIPE_WEBHOOK_ERROR]", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

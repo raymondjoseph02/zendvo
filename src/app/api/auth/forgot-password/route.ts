@@ -6,18 +6,18 @@ import { validateEmail, sanitizeInput } from "@/lib/validation";
 import { isRateLimited } from "@/lib/rate-limiter";
 import { sendForgotPasswordEmail } from "@/server/services/emailService";
 import { randomBytes } from "crypto";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   try {
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
     if (isRateLimited(ip, 3)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Too many requests. Please try again later.",
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many requests. Please try again later.",
       );
     }
 
@@ -25,18 +25,22 @@ export async function POST(request: NextRequest) {
     const { email } = body;
 
     if (!email) {
-      return NextResponse.json(
-        { success: false, error: "Email is required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Email is required",
       );
     }
 
     const sanitizedEmail = sanitizeInput(email);
 
     if (!validateEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid email format",
       );
     }
 
@@ -86,9 +90,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[FORGOT_PASSWORD_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

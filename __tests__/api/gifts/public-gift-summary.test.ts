@@ -44,8 +44,12 @@ describe("GET /api/gifts/public/:giftId/summary", () => {
   it("should return 200 with full gift summary", async () => {
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(mockGift);
 
-    const request = new NextRequest("http://localhost:3000/api/gifts/public/gift-123/summary");
-    const response = await GET(request, { params: Promise.resolve({ giftId: "gift-123" }) });
+    const request = new NextRequest(
+      "http://localhost:3000/api/gifts/public/gift-123/summary",
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ giftId: "gift-123" }),
+    });
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -57,8 +61,12 @@ describe("GET /api/gifts/public/:giftId/summary", () => {
   it("should return 404 if gift does not exist", async () => {
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(null);
 
-    const request = new NextRequest("http://localhost:3000/api/gifts/public/gift-123/summary");
-    const response = await GET(request, { params: Promise.resolve({ giftId: "gift-123" }) });
+    const request = new NextRequest(
+      "http://localhost:3000/api/gifts/public/gift-123/summary",
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ giftId: "gift-123" }),
+    });
 
     expect(response.status).toBe(404);
   });
@@ -69,8 +77,12 @@ describe("GET /api/gifts/public/:giftId/summary", () => {
       status: "confirmed",
     });
 
-    const request = new NextRequest("http://localhost:3000/api/gifts/public/gift-123/summary");
-    const response = await GET(request, { params: Promise.resolve({ giftId: "gift-123" }) });
+    const request = new NextRequest(
+      "http://localhost:3000/api/gifts/public/gift-123/summary",
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ giftId: "gift-123" }),
+    });
 
     expect(response.status).toBe(400);
   });

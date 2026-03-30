@@ -4,10 +4,12 @@ const mockSendTransaction = jest.fn();
 const mockPollTransaction = jest.fn();
 const mockContractCall = jest.fn();
 const mockAddressToScVal = jest.fn(() => "sender-scval");
-const mockNativeToScVal = jest.fn((value: string, options: { type: string }) => ({
-  type: options.type,
-  value,
-}));
+const mockNativeToScVal = jest.fn(
+  (value: string, options: { type: string }) => ({
+    type: options.type,
+    value,
+  }),
+);
 const mockPreparedTransactionSign = jest.fn();
 const mockSignerPublicKey = jest.fn(() => "GCONFIGUREDSIGNERPUBKEY");
 const mockKeypairFromSecret = jest.fn(() => ({

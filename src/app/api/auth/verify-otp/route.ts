@@ -5,15 +5,18 @@ import { eq } from "drizzle-orm";
 import { verifyOTP } from "@/server/services/otpService";
 import { sendSecurityAlertEmail } from "@/server/services/emailService";
 import { validateEmail, sanitizeInput } from "@/lib/validation";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   try {
     const origin = request.headers.get("origin");
     const host = request.headers.get("host");
     if (origin && host && !origin.includes(host)) {
-      return NextResponse.json(
-        { success: false, error: "CSRF protection: Invalid origin" },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "CSRF protection: Invalid origin",
       );
     }
 
@@ -21,18 +24,22 @@ export async function POST(request: NextRequest) {
     const { email, otp } = body;
 
     if (!email || !otp) {
-      return NextResponse.json(
-        { success: false, error: "Email and OTP are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Email and OTP are required",
       );
     }
 
     const sanitizedEmail = sanitizeInput(email);
 
     if (!validateEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid email format",
       );
     }
 
@@ -41,9 +48,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
       );
     }
 
@@ -66,9 +75,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[VERIFY_OTP_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

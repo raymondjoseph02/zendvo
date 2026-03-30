@@ -3,15 +3,18 @@ import { gifts } from "@/lib/db/schema";
 import { verifyGiftOTP } from "@/server/services/otpService";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   try {
     const userId = request.headers.get("x-user-id");
 
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -19,16 +22,20 @@ export async function POST(request: NextRequest) {
     const { giftId, otp } = body;
 
     if (!giftId || !otp) {
-      return NextResponse.json(
-        { success: false, error: "giftId and otp are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "giftId and otp are required",
       );
     }
 
     if (!/^\d{6}$/.test(otp)) {
-      return NextResponse.json(
-        { success: false, error: "Invalid OTP format. Must be 6 digits." },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid OTP format. Must be 6 digits.",
       );
     }
 
@@ -37,26 +44,29 @@ export async function POST(request: NextRequest) {
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     if (gift.senderId !== userId) {
-      return NextResponse.json(
-        { success: false, error: "You are not authorized to verify this gift" },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "You are not authorized to verify this gift",
       );
     }
 
     if (gift.status !== "pending_otp") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "This gift has already been verified or is no longer pending",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "This gift has already been verified or is no longer pending",
       );
     }
 
@@ -88,9 +98,11 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("[GIFT_VERIFY_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

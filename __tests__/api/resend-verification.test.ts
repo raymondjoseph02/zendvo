@@ -72,6 +72,6 @@ describe("POST /api/auth/resend-verification", () => {
     const json4 = await res4.json();
 
     expect(res4.status).toBe(429);
-    expect(json4.error).toBe("Rate limit exceeded");
+    expect(json4.detail).toBe("Rate limit exceeded");
   });
 });

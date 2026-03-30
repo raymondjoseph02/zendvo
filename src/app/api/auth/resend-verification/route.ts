@@ -4,6 +4,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { generateOTP, storeOTP } from "@/server/services/otpService";
 import { sendVerificationEmail } from "@/server/services/emailService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const resendAttempts = new Map<string, { count: number; resetAt: number }>();
 
@@ -16,9 +17,11 @@ export async function POST(request: Request) {
     const { userId, email, name } = body;
 
     if (!userId || !email) {
-      return NextResponse.json(
-        { error: "userId and email are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "userId and email are required",
       );
     }
 
@@ -32,13 +35,11 @@ export async function POST(request: Request) {
         const remainingTime = Math.ceil(
           (userAttempts.resetAt - now) / 1000 / 60,
         );
-        return NextResponse.json(
-          {
-            error: "Rate limit exceeded",
-            message: `Too many resend attempts. Please try again in ${remainingTime} minutes.`,
-            retryAfter: remainingTime,
-          },
-          { status: 429 },
+        return createProblemDetails(
+          "about:blank",
+          "Too Many Requests",
+          429,
+          "Rate limit exceeded",
         );
       }
     }
@@ -48,7 +49,12 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "User not found",
+      );
     }
 
     if (user.status === "active") {
@@ -87,12 +93,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error in resend-verification:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

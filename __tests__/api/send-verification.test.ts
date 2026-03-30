@@ -42,7 +42,7 @@ describe("POST /api/auth/send-verification", () => {
     const json = await res.json();
 
     expect(res.status).toBe(400);
-    expect(json.error).toBe("userId and email are required");
+    expect(json.detail).toBe("userId and email are required");
   });
 
   it("should return 404 if user not found", async () => {

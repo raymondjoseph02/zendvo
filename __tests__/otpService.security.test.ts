@@ -3,8 +3,19 @@
  * Tests the narrow and wide window account locking mechanisms
  */
 
-import { describe, it, expect, beforeEach, jest, afterEach } from "@jest/globals";
-import { verifyOTP, storeOTP, verifyGiftOTP } from "@/server/services/otpService";
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  jest,
+  afterEach,
+} from "@jest/globals";
+import {
+  verifyOTP,
+  storeOTP,
+  verifyGiftOTP,
+} from "@/server/services/otpService";
 import { db } from "@/lib/db";
 import { users, emailVerifications, gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -75,7 +86,7 @@ describe("OTP Security - Dual-Window Locking", () => {
 
       const result = await verifyOTP(mockUserId, "wrong-otp");
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.locked).toBe(true);
       expect(result.lockDuration).toBe("30 minutes");
       expect(result.message).toContain("locked for 30 minutes");
@@ -85,7 +96,7 @@ describe("OTP Security - Dual-Window Locking", () => {
         expect.objectContaining({
           lockDuration: "30 minutes",
           attemptNumber: 5,
-        })
+        }),
       );
     });
 
@@ -97,12 +108,14 @@ describe("OTP Security - Dual-Window Locking", () => {
         otpAttemptsWindowStart: new Date(),
       };
 
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(mockVerification);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        mockVerification,
+      );
       (db.query.users.findFirst as jest.Mock).mockResolvedValue(lockedUser);
 
       const result = await verifyOTP(mockUserId, mockOTP);
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.locked).toBe(true);
       expect(result.message).toContain("temporarily locked");
     });
@@ -123,7 +136,7 @@ describe("OTP Security - Dual-Window Locking", () => {
 
       const result = await verifyOTP(mockUserId, "wrong-otp");
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.remainingAttempts).toBe(2); // 5 - 3 = 2
       expect(result.message).toContain("2 attempts remaining");
     });
@@ -147,7 +160,7 @@ describe("OTP Security - Dual-Window Locking", () => {
 
       const result = await verifyOTP(mockUserId, "wrong-otp");
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.locked).toBe(true);
       expect(result.lockDuration).toBe("24 hours");
       expect(result.message).toContain("24 hours");
@@ -159,7 +172,7 @@ describe("OTP Security - Dual-Window Locking", () => {
           lockDuration: "24 hours",
           cumulativeFailures: 10,
           reason: "10 failed OTP attempts within 1 hour",
-        })
+        }),
       );
     });
 
@@ -193,7 +206,7 @@ describe("OTP Security - Dual-Window Locking", () => {
       expect(setMock).toHaveBeenCalledWith(
         expect.objectContaining({
           otpFailedAttempts: 1, // Reset to 1 (current attempt)
-        })
+        }),
       );
     });
 
@@ -227,7 +240,7 @@ describe("OTP Security - Dual-Window Locking", () => {
         mockUserId,
         expect.objectContaining({
           cumulativeFailures: 4, // 3 + 1 = 4
-        })
+        }),
       );
     });
 
@@ -253,7 +266,7 @@ describe("OTP Security - Dual-Window Locking", () => {
       expect(auditService.logOTPEvent).toHaveBeenCalledWith(
         auditService.AuditEventType.ACCOUNT_LOCKED_10_ATTEMPTS,
         expect.any(String),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -275,7 +288,9 @@ describe("OTP Security - Dual-Window Locking", () => {
         verifyOTPHash: mockVerifyOTPHash,
       }));
 
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(mockVerification);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        mockVerification,
+      );
       (db.query.users.findFirst as jest.Mock).mockResolvedValue(mockUser);
 
       const updateMock = jest.fn(() => ({
@@ -316,7 +331,7 @@ describe("OTP Security - Dual-Window Locking", () => {
           attemptNumber: 2,
           cumulativeFailures: 3,
           remainingAttempts: 3,
-        })
+        }),
       );
     });
 
@@ -343,7 +358,7 @@ describe("OTP Security - Dual-Window Locking", () => {
           lockDuration: "30 minutes",
           attemptNumber: 5,
           reason: "5 failed attempts on current OTP",
-        })
+        }),
       );
     });
   });
@@ -355,20 +370,24 @@ describe("OTP Security - Dual-Window Locking", () => {
         expiresAt: new Date(Date.now() - 1000), // Expired
       };
 
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(expiredVerification);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        expiredVerification,
+      );
 
       const result = await verifyOTP(mockUserId, mockOTP);
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.message).toContain("expired");
     });
 
     it("should handle missing verification", async () => {
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(null);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        null,
+      );
 
       const result = await verifyOTP(mockUserId, mockOTP);
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.message).toContain("No verification code found");
     });
 
@@ -378,7 +397,9 @@ describe("OTP Security - Dual-Window Locking", () => {
         attempts: 5,
       };
 
-      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(maxAttemptsVerification);
+      (db.query.emailVerifications.findFirst as jest.Mock).mockResolvedValue(
+        maxAttemptsVerification,
+      );
       (db.query.users.findFirst as jest.Mock).mockResolvedValue({
         id: mockUserId,
         lockUntil: null,
@@ -388,7 +409,7 @@ describe("OTP Security - Dual-Window Locking", () => {
 
       const result = await verifyOTP(mockUserId, mockOTP);
 
-      expect(result.success).toBe(false);
+      expect(result.detail).toBeDefined();
       expect(result.locked).toBe(true);
       expect(result.message).toContain("Maximum attempts exceeded");
     });
@@ -418,7 +439,7 @@ describe("Gift OTP Security", () => {
       expect.objectContaining({
         attemptNumber: 3,
         remainingAttempts: 2,
-      })
+      }),
     );
   });
 
@@ -432,7 +453,7 @@ describe("Gift OTP Security", () => {
       gift.id,
       expect.objectContaining({
         attempts: 5,
-      })
+      }),
     );
   });
 

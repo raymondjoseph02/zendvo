@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: Request) {
   try {
@@ -6,6 +7,11 @@ export async function POST(request: Request) {
     // Placeholder for authentication logic
     return NextResponse.json({ message: "Auth route placeholder", data: body });
   } catch (error) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "Invalid request",
+    );
   }
 }

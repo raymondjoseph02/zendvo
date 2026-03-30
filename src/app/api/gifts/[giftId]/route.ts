@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const REVIEWABLE_GIFT_STATUSES = new Set([
   "pending_otp",
@@ -17,9 +18,11 @@ export async function GET(
     const userId = request.headers.get("x-user-id");
 
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -39,23 +42,24 @@ export async function GET(
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     if (gift.senderId !== userId) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+      return createProblemDetails("about:blank", "Forbidden", 403, "Forbidden");
     }
 
     if (!REVIEWABLE_GIFT_STATUSES.has(gift.status)) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
@@ -76,9 +80,11 @@ export async function GET(
     );
   } catch (error) {
     console.error("Error fetching gift details:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

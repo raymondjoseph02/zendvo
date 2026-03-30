@@ -1,12 +1,19 @@
 import { db } from "@/lib/db";
 import { gifts, wallets } from "@/lib/db/schema";
 import { notifyGiftCompleted } from "@/server/services/notificationService";
-import { verifyPayment as verifyPaystackPayment, isPaymentSuccessful as isPaystackPaymentSuccessful } from "@/lib/paystack/api";
-import { verifyPayment as verifyStripePayment, isPaymentSuccessful as isStripePaymentSuccessful } from "@/lib/stripe/client";
+import {
+  verifyPayment as verifyPaystackPayment,
+  isPaymentSuccessful as isPaystackPaymentSuccessful,
+} from "@/lib/paystack/api";
+import {
+  verifyPayment as verifyStripePayment,
+  isPaymentSuccessful as isStripePaymentSuccessful,
+} from "@/lib/stripe/client";
 import { validateCurrency } from "@/lib/validation";
 import crypto from "crypto";
 import { and, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(
   request: NextRequest,
@@ -16,16 +23,19 @@ export async function POST(
     const userId = request.headers.get("x-user-id");
 
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
     const { giftId } = await params;
 
     const body = await request.json().catch(() => ({}));
-    const blockchainTxHash = body.blockchain_tx_hash || body.blockchainTxHash || null;
+    const blockchainTxHash =
+      body.blockchain_tx_hash || body.blockchainTxHash || null;
 
     // Fetch the gift with sender info
     const gift = await db.query.gifts.findFirst({
@@ -37,50 +47,45 @@ export async function POST(
     });
 
     if (!gift) {
-      return NextResponse.json(
-        { success: false, error: "Gift not found" },
-        { status: 404 },
+      return createProblemDetails(
+        "about:blank",
+        "Not Found",
+        404,
+        "Gift not found",
       );
     }
 
     // Ensure the requester is the sender (also rejects public gifts with null senderId)
     if (!gift.senderId || gift.senderId !== userId) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 },
-      );
+      return createProblemDetails("about:blank", "Forbidden", 403, "Forbidden");
     }
 
     // Idempotency: already completed/sent
     if (gift.status === "completed" || gift.status === "sent") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Gift has already been completed",
-          transactionId: gift.transactionId,
-        },
-        { status: 409 },
+      return createProblemDetails(
+        "about:blank",
+        "Conflict",
+        409,
+        "Gift has already been completed",
       );
     }
 
     // Must be confirmed to proceed with settlement
     if (gift.status !== "confirmed") {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Gift must be confirmed before completion. Current status: ${gift.status}`,
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        `Gift must be confirmed before completion. Current status: ${gift.status}`,
       );
     }
 
     if (!validateCurrency(gift.currency)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Unsupported currency. Accepted: NGN, USD",
-        },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Unsupported currency. Accepted: NGN, USD",
       );
     }
 
@@ -92,26 +97,34 @@ export async function POST(
         let isPaymentSuccessful;
 
         if (giftData.paymentProvider === "paystack") {
-          verificationResult = await verifyPaystackPayment(giftData.paymentReference);
-          isPaymentSuccessful = isPaystackPaymentSuccessful(verificationResult.status);
+          verificationResult = await verifyPaystackPayment(
+            giftData.paymentReference,
+          );
+          isPaymentSuccessful = isPaystackPaymentSuccessful(
+            verificationResult.status,
+          );
         } else if (giftData.paymentProvider === "stripe") {
-          verificationResult = await verifyStripePayment(giftData.paymentReference);
-          isPaymentSuccessful = isStripePaymentSuccessful(verificationResult.status);
+          verificationResult = await verifyStripePayment(
+            giftData.paymentReference,
+          );
+          isPaymentSuccessful = isStripePaymentSuccessful(
+            verificationResult.status,
+          );
         } else {
-          return NextResponse.json(
-            { success: false, error: "Unsupported payment provider" },
-            { status: 400 },
+          return createProblemDetails(
+            "about:blank",
+            "Bad Request",
+            400,
+            "Unsupported payment provider",
           );
         }
 
         if (!isPaymentSuccessful) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: `Payment verification failed. Payment status: ${verificationResult.status}`,
-              paymentStatus: verificationResult.status,
-            },
-            { status: 402 },
+          return createProblemDetails(
+            "about:blank",
+            "Payment Required",
+            402,
+            `Payment verification failed. Payment status: ${verificationResult.status}`,
           );
         }
 
@@ -122,12 +135,11 @@ export async function POST(
           .where(eq(gifts.id, giftId));
       } catch (error) {
         console.error("Payment verification error:", error);
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Payment verification failed. Please try again.",
-          },
-          { status: 402 },
+        return createProblemDetails(
+          "about:blank",
+          "Payment Required",
+          402,
+          "Payment verification failed. Please try again.",
         );
       }
     }
@@ -141,9 +153,11 @@ export async function POST(
     });
 
     if (!senderWallet || senderWallet.balance < gift.amount) {
-      return NextResponse.json(
-        { success: false, error: "Insufficient funds" },
-        { status: 402 },
+      return createProblemDetails(
+        "about:blank",
+        "Payment Required",
+        402,
+        "Insufficient funds",
       );
     }
 
@@ -213,9 +227,11 @@ export async function POST(
     );
   } catch (error) {
     console.error("Error confirming gift:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

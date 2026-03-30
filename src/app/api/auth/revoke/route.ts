@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import { refreshTokens } from "@/lib/db/schema";
+import { createProblemDetails } from "@/lib/api-utils";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -17,9 +18,11 @@ export async function POST(request: NextRequest) {
     const requesterRole = request.headers.get("x-user-role") ?? "";
 
     if (!requesterId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Unauthorized",
       );
     }
 
@@ -34,12 +37,11 @@ export async function POST(request: NextRequest) {
     const isAdmin = ADMIN_ROLES.has(requesterRole.toLowerCase());
 
     if (!isSelfTarget && !isAdmin) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Forbidden: insufficient permissions to revoke this user",
-        },
-        { status: 403 },
+      return createProblemDetails(
+        "about:blank",
+        "Forbidden",
+        403,
+        "Forbidden: insufficient permissions to revoke this user",
       );
     }
 
@@ -73,9 +75,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[REVOKE_REFRESH_TOKENS_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

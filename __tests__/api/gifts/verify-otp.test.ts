@@ -32,7 +32,10 @@ describe("POST /api/gifts/verify-otp", () => {
     otpAttempts: 0,
   };
 
-  const createRequest = (body: Record<string, unknown>, headers: Record<string, string> = {}) =>
+  const createRequest = (
+    body: Record<string, unknown>,
+    headers: Record<string, string> = {},
+  ) =>
     new NextRequest("http://localhost/api/gifts/verify-otp", {
       method: "POST",
       headers: {
@@ -62,7 +65,9 @@ describe("POST /api/gifts/verify-otp", () => {
   it("should return 404 if gift does not exist", async () => {
     (db.query.gifts.findFirst as jest.Mock).mockResolvedValue(null);
 
-    const response = await POST(createRequest({ giftId: "nonexistent", otp: "123456" }));
+    const response = await POST(
+      createRequest({ giftId: "nonexistent", otp: "123456" }),
+    );
     expect(response.status).toBe(404);
   });
 
@@ -73,7 +78,9 @@ describe("POST /api/gifts/verify-otp", () => {
       message: "Gift OTP verified successfully!",
     });
 
-    const response = await POST(createRequest({ giftId: "gift-123", otp: "123456" }));
+    const response = await POST(
+      createRequest({ giftId: "gift-123", otp: "123456" }),
+    );
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -89,7 +96,9 @@ describe("POST /api/gifts/verify-otp", () => {
       locked: false,
     });
 
-    const response = await POST(createRequest({ giftId: "gift-123", otp: "000000" }));
+    const response = await POST(
+      createRequest({ giftId: "gift-123", otp: "000000" }),
+    );
     expect(response.status).toBe(400);
   });
 
@@ -102,7 +111,9 @@ describe("POST /api/gifts/verify-otp", () => {
       remainingAttempts: 0,
     });
 
-    const response = await POST(createRequest({ giftId: "gift-123", otp: "000000" }));
+    const response = await POST(
+      createRequest({ giftId: "gift-123", otp: "000000" }),
+    );
     expect(response.status).toBe(423);
   });
 });

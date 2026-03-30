@@ -22,27 +22,29 @@ describe("Timezone-aware validation", () => {
       const invalidDate = "2026-03-30 14:00:00";
       const result = validateUnlockAt(invalidDate);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain("timezone");
+      expect(result.detail).toContain("timezone");
     });
 
     it("should reject incomplete ISO format", () => {
       const invalidDate = "2026-03-30T14:00:00";
       const result = validateUnlockAt(invalidDate);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain("timezone");
+      expect(result.detail).toContain("timezone");
     });
 
     it("should reject non-string/non-Date inputs", () => {
       const result = validateUnlockAt(123 as any);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain("ISO 8601 string or Date object");
+      expect(result.detail).toContain("ISO 8601 string or Date object");
     });
 
     it("should reject dates less than 1 hour in the future", () => {
-      const thirtyMinutesFromNow = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const thirtyMinutesFromNow = new Date(
+        Date.now() + 30 * 60 * 1000,
+      ).toISOString();
       const result = validateUnlockAt(thirtyMinutesFromNow);
       expect(result.valid).toBe(false);
-      expect(result.error).toContain("at least 1 hour in the future");
+      expect(result.detail).toContain("at least 1 hour in the future");
     });
   });
 

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { markGiftPaymentSuccessfulByReference } from "@/server/services/giftStatusService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 /**
  * Paystack Webhook Handler
@@ -19,7 +20,12 @@ export async function POST(req: NextRequest) {
 
     if (!secret || !signature) {
       console.warn("[PAYSTACK_WEBHOOK] Invalid signature context");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid signature",
+      );
     }
 
     // Compute HMAC SHA512 hash of the raw body using the secret key
@@ -30,7 +36,12 @@ export async function POST(req: NextRequest) {
 
     if (hash.length !== signature.length) {
       console.warn("[PAYSTACK_WEBHOOK] Invalid signature length");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid signature",
+      );
     }
 
     // Verify that the computed hash matches the signature from Paystack
@@ -42,7 +53,12 @@ export async function POST(req: NextRequest) {
       !crypto.timingSafeEqual(computed, received)
     ) {
       console.warn("[PAYSTACK_WEBHOOK] Invalid signature detected");
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid signature",
+      );
     }
 
     // Parse the validated payload

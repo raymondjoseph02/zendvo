@@ -1,7 +1,11 @@
 import { describe, it, expect, jest } from "@jest/globals";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { createUser, findUserByPhoneNumber, findUserByEmail } from "@/server/db/authRepository";
+import {
+  createUser,
+  findUserByPhoneNumber,
+  findUserByEmail,
+} from "@/server/db/authRepository";
 import { sanitizePhoneNumber } from "@/lib/validation";
 
 // Mock database
@@ -126,7 +130,7 @@ describe("Phone Number Uniqueness Constraint", () => {
       expect(mockInsert.values).toHaveBeenCalledWith(
         expect.objectContaining({
           phoneNumber: null,
-        })
+        }),
       );
       expect(result.phoneNumber).toBeNull();
     });
@@ -145,11 +149,13 @@ describe("Phone Number Uniqueness Constraint", () => {
 
       const mockInsert = {
         values: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockResolvedValue([{
-          id: "user-123",
-          ...userInput,
-          phoneNumber: expectedSanitized,
-        }]),
+        returning: jest.fn().mockResolvedValue([
+          {
+            id: "user-123",
+            ...userInput,
+            phoneNumber: expectedSanitized,
+          },
+        ]),
       };
       (db.insert as jest.Mock).mockReturnValue(mockInsert);
 
@@ -158,7 +164,7 @@ describe("Phone Number Uniqueness Constraint", () => {
       expect(mockInsert.values).toHaveBeenCalledWith(
         expect.objectContaining({
           phoneNumber: expectedSanitized,
-        })
+        }),
       );
     });
   });
@@ -166,13 +172,16 @@ describe("Phone Number Uniqueness Constraint", () => {
   describe("Duplicate Prevention", () => {
     it("should prevent duplicate phone numbers at database level", async () => {
       // Simulate database unique violation
-      const uniqueViolationError = new Error("duplicate key value violates unique constraint");
+      const uniqueViolationError = new Error(
+        "duplicate key value violates unique constraint",
+      );
       const typedUniqueViolationError = uniqueViolationError as Error & {
         code?: string;
         detail?: string;
       };
       typedUniqueViolationError.code = "23505";
-      typedUniqueViolationError.detail = "Key (phone_number)=(+2348123456789) already exists.";
+      typedUniqueViolationError.detail =
+        "Key (phone_number)=(+2348123456789) already exists.";
 
       const mockInsert = {
         values: jest.fn().mockReturnThis(),

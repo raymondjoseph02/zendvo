@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyOTP } from "@/server/services/otpService";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: Request) {
   try {
@@ -7,16 +8,20 @@ export async function POST(request: Request) {
     const { userId, otp } = body;
 
     if (!userId || !otp) {
-      return NextResponse.json(
-        { error: "userId and otp are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "userId and otp are required",
       );
     }
 
     if (!/^\d{6}$/.test(otp)) {
-      return NextResponse.json(
-        { error: "Invalid OTP format. Must be 6 digits." },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid OTP format. Must be 6 digits.",
       );
     }
 
@@ -46,12 +51,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, message: result.message });
   } catch (error) {
     console.error("Error in verify-email:", error);
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        message: error instanceof Error ? error.message : "Unknown error",
-      },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

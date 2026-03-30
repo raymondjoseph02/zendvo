@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { gifts } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import Stripe from "stripe";
+import { createProblemDetails } from "@/lib/api-utils";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -11,9 +12,11 @@ export async function POST(request: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
   if (!sig || !webhookSecret) {
-    return NextResponse.json(
-      { error: "Missing stripe signature or webhook secret" },
-      { status: 400 }
+    return createProblemDetails(
+      "about:blank",
+      "Bad Request",
+      400,
+      "Missing stripe signature or webhook secret",
     );
   }
 
@@ -22,9 +25,12 @@ export async function POST(request: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Webhook signature verification failed";
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Webhook signature verification failed";
     console.error("Webhook error:", message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    return createProblemDetails("about:blank", "Bad Request", 400, message);
   }
 
   if (event.type === "checkout.session.completed") {
@@ -32,7 +38,9 @@ export async function POST(request: NextRequest) {
     const giftId = session.metadata?.giftId;
 
     if (!giftId) {
-      console.error("Webhook: checkout.session.completed missing giftId metadata");
+      console.error(
+        "Webhook: checkout.session.completed missing giftId metadata",
+      );
       return NextResponse.json({ received: true });
     }
 

@@ -19,6 +19,7 @@ import {
 import { sanitizeInput, validateEmail } from "@/lib/validation";
 import { cleanupExpiredOTPs } from "@/server/services/otpService";
 import { computeFingerprint } from "@/lib/fingerprint";
+import { createProblemDetails } from "@/lib/api-utils";
 
 const FAILED_ATTEMPT_LIMIT = 5;
 const FAILED_ATTEMPT_WINDOW_MS = 60 * 1000;
@@ -100,12 +101,11 @@ export async function POST(request: NextRequest) {
     const ip = getClientIp(request);
 
     if (isIpRateLimited(ip)) {
-      return NextResponse.json(
-        {
-          error:
-            "Too many failed login attempts. Please try again in 1 minute.",
-        },
-        { status: 429 },
+      return createProblemDetails(
+        "about:blank",
+        "Too Many Requests",
+        429,
+        "Too many failed login attempts. Please try again in 1 minute.",
       );
     }
 
@@ -113,17 +113,21 @@ export async function POST(request: NextRequest) {
     const { email, password, device_id } = body;
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Email and password are required",
       );
     }
 
     const sanitizedEmail = sanitizeInput(String(email)).toLowerCase();
     if (!validateEmail(sanitizedEmail)) {
-      return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 },
+      return createProblemDetails(
+        "about:blank",
+        "Bad Request",
+        400,
+        "Invalid email format",
       );
     }
 
@@ -142,9 +146,11 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       registerFailedAttempt(ip);
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid email or password",
       );
     }
 
@@ -155,9 +161,11 @@ export async function POST(request: NextRequest) {
 
     if (!isPasswordValid) {
       registerFailedAttempt(ip);
-      return NextResponse.json(
-        { error: "Invalid email or password" },
-        { status: 401 },
+      return createProblemDetails(
+        "about:blank",
+        "Unauthorized",
+        401,
+        "Invalid email or password",
       );
     }
 
@@ -222,9 +230,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[LOGIN_ERROR]", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

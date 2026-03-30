@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { refreshTokens } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { createProblemDetails } from "@/lib/api-utils";
 import {
   ACCESS_TOKEN_COOKIE,
   REFRESH_TOKEN_COOKIE,
@@ -44,9 +45,11 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     console.error("[LOGOUT_ERROR]", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 },
+    return createProblemDetails(
+      "about:blank",
+      "Internal Server Error",
+      500,
+      "Internal server error",
     );
   }
 }

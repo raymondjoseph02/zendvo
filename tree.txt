@@ -1,0 +1,323 @@
+.
+├── __tests__
+│   ├── api
+│   │   ├── auth
+│   │   │   ├── forgot-password.test.ts
+│   │   │   ├── login.test.ts
+│   │   │   ├── me.test.ts
+│   │   │   ├── otp.test.ts
+│   │   │   ├── register.test.ts
+│   │   │   ├── reset-password.test.ts
+│   │   │   └── token-flow.test.ts
+│   │   ├── dashboard-summary.test.ts
+│   │   ├── gifts
+│   │   │   ├── get-gift-details.test.ts
+│   │   │   ├── public-gift-summary.test.ts
+│   │   │   └── verify-otp.test.ts
+│   │   ├── gifts-confirm.test.ts
+│   │   ├── gifts.test.ts
+│   │   ├── resend-verification.test.ts
+│   │   ├── send-verification.test.ts
+│   │   ├── transactions.test.ts
+│   │   ├── users
+│   │   │   └── lookup.test.ts
+│   │   └── verify-email.test.ts
+│   ├── button-contrast.test.ts
+│   ├── emailService.test.ts
+│   ├── lib
+│   │   ├── auth.test.ts
+│   │   ├── currencyConverter.test.ts
+│   │   ├── fees.test.ts
+│   │   ├── otpRateLimit.test.ts
+│   │   ├── rateLimiter.test.ts
+│   │   ├── stellar-client.test.ts
+│   │   └── validation.test.ts
+│   ├── otpService.security.test.ts
+│   ├── otpService.test.ts
+│   ├── paymentSummary.test.ts
+│   ├── server
+│   │   ├── db
+│   │   │   └── authRepository.test.ts
+│   │   └── services
+│   │       └── otpService.test.ts
+│   ├── timezone-integration.test.ts
+│   └── validation.test.ts
+├── drizzle
+│   ├── 0000_orange_pete_wisdom.sql
+│   ├── 0001_add_link_expires_at_to_gifts.sql
+│   ├── 0001_jittery_blacklash.sql
+│   ├── 0001_rapid_rhodey.sql
+│   ├── 0002_add_cover_image_id_to_gifts.sql
+│   ├── 0003_add_device_id_to_refresh_tokens.sql
+│   ├── 0003_add_fee_fields_to_gifts.sql
+│   ├── 0003_update_gift_status_lifecycle.sql
+│   ├── 0004_add_is_phone_verified_to_users.sql
+│   ├── 0005_add_payment_fields_to_gifts.sql
+│   ├── 0006_add_fingerprint_to_refresh_tokens.sql
+│   ├── 0006_add_short_code_to_gifts.sql
+│   ├── 001_add_phone_unique_constraint.sql
+│   └── meta
+│       ├── _journal.json
+│       ├── 0000_snapshot.json
+│       └── 0001_snapshot.json
+├── drizzle.config.ts
+├── eslint.config.mjs
+├── jest.config.js
+├── migrations
+│   ├── add_currency_default_usdc.sql
+│   ├── add_gift_slug.sql
+│   └── add_otp_wide_window_tracking.sql
+├── next.config.ts
+├── package-lock.json
+├── package.json
+├── postcss.config.mjs
+├── postman_collection.json
+├── pr-143.md
+├── public
+│   ├── empty-state.png
+│   ├── file.svg
+│   ├── Gift Received .png
+│   ├── gift received 2.png
+│   ├── gift sent.png
+│   ├── globe.svg
+│   ├── logo.png
+│   ├── map.png
+│   ├── next.svg
+│   ├── vercel.svg
+│   └── window.svg
+├── README.md
+├── scripts
+│   ├── test-otp-security.ts
+│   └── validate-implementation.js
+├── src
+│   ├── app
+│   │   ├── (public)
+│   │   │   ├── g
+│   │   │   │   ├── [slug]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── gift
+│   │   │   │   ├── [giftId]
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   └── track
+│   │   │       └── page.tsx
+│   │   ├── api
+│   │   │   ├── auth
+│   │   │   │   ├── forgot-password
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── login
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── logout
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── me
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── refresh
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── register
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── resend-otp
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── resend-verification
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── reset-password
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── revoke
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   ├── send-otp
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── send-phone-otp
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── send-verification
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── verify-email
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── verify-otp
+│   │   │   │       └── route.ts
+│   │   │   ├── dashboard
+│   │   │   │   └── summary
+│   │   │   │       └── route.ts
+│   │   │   ├── gifts
+│   │   │   │   ├── [giftId]
+│   │   │   │   │   ├── checkout
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   ├── confirm
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── public
+│   │   │   │   │   ├── [giftId]
+│   │   │   │   │   │   ├── confirm
+│   │   │   │   │   │   │   └── route.ts
+│   │   │   │   │   │   └── summary
+│   │   │   │   │   │       └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── verify-otp
+│   │   │   │       └── route.ts
+│   │   │   ├── transactions
+│   │   │   │   └── route.ts
+│   │   │   ├── users
+│   │   │   │   └── lookup
+│   │   │   │       └── route.ts
+│   │   │   └── webhooks
+│   │   │       ├── paystack
+│   │   │       │   └── route.ts
+│   │   │       ├── route.ts
+│   │   │       └── stripe
+│   │   │           └── route.ts
+│   │   ├── auth
+│   │   │   ├── login
+│   │   │   │   └── page.tsx
+│   │   │   ├── reset-password
+│   │   │   │   └── page.tsx
+│   │   │   ├── sign-up
+│   │   │   │   └── page.tsx
+│   │   │   └── verify
+│   │   │       └── page.tsx
+│   │   ├── dashboard
+│   │   │   ├── gifts
+│   │   │   │   ├── detail
+│   │   │   │   │   └── page.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── recipient
+│   │   │   │   └── page.tsx
+│   │   │   ├── sender
+│   │   │   │   └── page.tsx
+│   │   │   └── wallet
+│   │   │       └── page.tsx
+│   │   ├── favicon.ico
+│   │   ├── forgot-password
+│   │   │   └── page.tsx
+│   │   ├── globals.css
+│   │   ├── help
+│   │   │   └── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── notifications
+│   │   │   └── page.tsx
+│   │   ├── page.module.css
+│   │   ├── page.tsx
+│   │   ├── privacy
+│   │   │   └── page.tsx
+│   │   ├── profile
+│   │   │   └── page.tsx
+│   │   ├── settings
+│   │   │   └── page.tsx
+│   │   └── terms
+│   │       └── page.tsx
+│   ├── assets
+│   │   ├── images
+│   │   │   ├── package.png
+│   │   │   ├── user.png
+│   │   │   └── zendo-logo.png
+│   │   └── svg.tsx
+│   ├── components
+│   │   ├── Alert.tsx
+│   │   ├── auth
+│   │   │   ├── EmailVerificationSuccess.tsx
+│   │   │   ├── HelpModal.tsx
+│   │   │   ├── index.ts
+│   │   │   ├── OTPInput.tsx
+│   │   │   ├── PasswordStrengthIndicator.tsx
+│   │   │   ├── SignupSuccessModal.tsx
+│   │   │   └── WordMapShowcase.tsx
+│   │   ├── Button.tsx
+│   │   ├── buttonColors.ts
+│   │   ├── Card.tsx
+│   │   ├── dashboard
+│   │   │   ├── dashboard
+│   │   │   │   ├── AccountBalanceCard.tsx
+│   │   │   │   ├── GiftCard.tsx
+│   │   │   │   ├── GiftInfoCard.tsx
+│   │   │   │   ├── KycCard.tsx
+│   │   │   │   └── TransactionTable.tsx
+│   │   │   └── global
+│   │   │       ├── NavBar.tsx
+│   │   │       └── SideBar.tsx
+│   │   ├── gift
+│   │   │   ├── GiftPreviewModal.tsx
+│   │   │   ├── GiftSuccessModal.tsx
+│   │   │   ├── NewGiftSuccessModal.tsx
+│   │   │   ├── PublicGiftClaimView.tsx
+│   │   │   ├── ReviewGiftDetails.tsx
+│   │   │   ├── SenderDetailsForm.tsx
+│   │   │   ├── SendGiftDetailsForm.tsx
+│   │   │   └── SendGiftSenderDetails.tsx
+│   │   ├── ImageUpload.tsx
+│   │   ├── Input.tsx
+│   │   ├── OtpCountdown.tsx
+│   │   ├── PasswordInput.tsx
+│   │   ├── PhoneInput.tsx
+│   │   ├── Tooltip.tsx
+│   │   └── WalletConnect.tsx
+│   ├── context
+│   │   └── AuthContext.tsx
+│   ├── hooks
+│   │   └── useAuth.ts
+│   ├── layouts
+│   │   ├── AuthLayout.tsx
+│   │   └── DashboardLayout.tsx
+│   ├── lib
+│   │   ├── auth-session.ts
+│   │   ├── auth.ts
+│   │   ├── confetti.ts
+│   │   ├── cookies.ts
+│   │   ├── currencyConverter.ts
+│   │   ├── db
+│   │   │   ├── index.ts
+│   │   │   └── schema.ts
+│   │   ├── fees.ts
+│   │   ├── fingerprint.ts
+│   │   ├── honeypot.ts
+│   │   ├── isPostgresBusy.ts
+│   │   ├── paymentSummary.ts
+│   │   ├── paystack
+│   │   │   └── api.ts
+│   │   ├── prisma-client-mock.ts
+│   │   ├── prisma.ts
+│   │   ├── qr
+│   │   │   └── generator.ts
+│   │   ├── rate-limiter.ts
+│   │   ├── shortCode.ts
+│   │   ├── slug.ts
+│   │   ├── stellar
+│   │   │   └── client.ts
+│   │   ├── stripe
+│   │   │   └── client.ts
+│   │   ├── tokens.ts
+│   │   ├── validation.ts
+│   │   └── validations
+│   │       └── auth.ts
+│   ├── middleware.ts
+│   ├── server
+│   │   ├── actions.ts
+│   │   ├── db
+│   │   │   ├── authRepository.ts
+│   │   │   ├── drizzle.ts
+│   │   │   └── schema.ts
+│   │   ├── jobs
+│   │   │   ├── cleanupExpiredOTPs.ts
+│   │   │   ├── cleanupPasswordResets.ts
+│   │   │   └── webhookRetryJob.ts
+│   │   └── services
+│   │       ├── auditService.ts
+│   │       ├── emailService.ts
+│   │       ├── giftStatusService.ts
+│   │       ├── notificationService.ts
+│   │       ├── otpService.ts
+│   │       ├── paymentService.ts
+│   │       ├── transactionService.ts
+│   │       └── webhookRetryService.ts
+│   ├── services
+│   │   └── api.ts
+│   ├── styles
+│   │   └── theme.ts
+│   └── types
+│       ├── auth.ts
+│       └── index.ts
+├── swagger.yaml
+├── tree.txt
+└── tsconfig.json
+
+100 directories, 221 files

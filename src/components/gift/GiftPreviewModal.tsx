@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Gift, Lock, EyeOff, Calendar } from "lucide-react";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export interface GiftPreviewData {
   recipientName: string;
@@ -28,16 +29,24 @@ const GiftPreviewModal: React.FC<GiftPreviewModalProps> = ({
 }) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard / body-scroll management
+  // The close button is the natural first focus target when the modal opens —
+  // this gives keyboard users an immediate, discoverable way to dismiss it.
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // ── Focus trap: constrains Tab/Shift+Tab to the modal panel ──────────────
+  useFocusTrap(modalRef, isOpen, { initialFocusRef: closeButtonRef });
+
+  // ── Escape key + body-scroll lock ─────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) onClose();
     };
+
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
-      setTimeout(() => modalRef.current?.focus(), 50);
     }
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
@@ -67,9 +76,12 @@ const GiftPreviewModal: React.FC<GiftPreviewModalProps> = ({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          // Clicking the backdrop closes the modal
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
+          // Prevent focus from escaping to the backdrop itself
+          aria-hidden="true"
         >
           {/* ── Modal panel ── */}
           <motion.div
@@ -83,7 +95,11 @@ const GiftPreviewModal: React.FC<GiftPreviewModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="preview-modal-title"
+            // tabIndex={-1} lets the container receive programmatic focus as a
+            // fallback if no focusable child is found inside.
             tabIndex={-1}
+            // Stop clicks inside the panel from bubbling to the backdrop
+            onClick={(e) => e.stopPropagation()}
           >
             {/* ── Header bar ── */}
             <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-[#EEEEF3]">
@@ -98,7 +114,10 @@ const GiftPreviewModal: React.FC<GiftPreviewModalProps> = ({
                   Recipient&apos;s View
                 </h2>
               </div>
+
+              {/* Close button — receives initial focus when modal opens */}
               <button
+                ref={closeButtonRef}
                 onClick={onClose}
                 className="p-1.5 rounded-full text-[#717182] hover:text-[#18181B] hover:bg-[#F4F4F6] transition-colors focus:outline-none focus:ring-2 focus:ring-[#5A42DE]/30"
                 aria-label="Close preview"
@@ -211,6 +230,9 @@ const GiftPreviewModal: React.FC<GiftPreviewModalProps> = ({
               <button
                 disabled
                 className="w-full h-11 rounded-xl bg-[#5A42DE] text-white text-[14px] font-semibold opacity-60 cursor-not-allowed select-none"
+                // Explicitly excluded from tab order since it is non-functional
+                tabIndex={-1}
+                aria-hidden="true"
               >
                 Claim Gift
               </button>

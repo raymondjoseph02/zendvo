@@ -1,26 +1,39 @@
-export const ALLOWED_COUNTRY_CODES = process.env.ALLOWED_COUNTRY_CODES
-  ? process.env.ALLOWED_COUNTRY_CODES.split(",").map((code: string) => code.trim())
-  : ["234", "1"];
+import { z } from "zod";
 
-export function validatePhoneCountryCode(phoneNumber: string): {
-  isValid: boolean;
-  message?: string;
-} {
-  let cleanNumber = phoneNumber.replace(/[\s\-().]/g, "");
-  if (cleanNumber.startsWith("+")) {
-    cleanNumber = cleanNumber.substring(1);
-  }
+// E.164: +<country-code><subscriber-number>, 2–15 digits after +, no leading 0
+const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
-  const isAllowed = ALLOWED_COUNTRY_CODES.some((code: string) =>
-    cleanNumber.startsWith(code)
-  );
+export const phoneField = z
+  .string()
+  .trim()
+  .regex(E164_REGEX, "Must be a valid E.164 phone number (e.g. +14155552671)");
 
-  if (!isAllowed) {
-    return {
-      isValid: false,
-      message: "Service currently only available in Nigeria and the US.",
-    };
-  }
+export type PhoneNumber = z.infer<typeof phoneField>;
 
-  return { isValid: true };
-}
+export const phoneSchema = z.object({ phone: phoneField });
+export type PhoneSchema = z.infer<typeof phoneSchema>;
+
+export const signUpSchema = z.object({
+  fullName: z
+    .string()
+    .trim()
+    .min(2, "At least 2 characters"),
+  email: z
+    .string()
+    .trim()
+    .email("Invalid email address"),
+  phone: phoneField,
+  password: z
+    .string()
+    .min(8, "At least 8 characters"),
+});
+export type SignUpSchema = z.infer<typeof signUpSchema>;
+
+export const profileUpdateSchema = z.object({
+  fullName: z.string().trim().min(2, "At least 2 characters").optional(),
+  phone: phoneField.optional(),
+});
+export type ProfileUpdateSchema = z.infer<typeof profileUpdateSchema>;
+
+export const isValidE164 = (value: unknown): value is PhoneNumber =>
+  phoneField.safeParse(value).success;

@@ -49,65 +49,67 @@ const mockGifts = [
   },
 ];
 
-beforeEach(() => {
-  (mockDb.query.gifts.findMany as jest.Mock).mockResolvedValue(mockGifts);
-  (mockDb.select as jest.Mock).mockReturnValue({
-    from: jest.fn().mockReturnValue({
-      where: jest.fn().mockResolvedValue([{ value: 2 }]),
-    }),
+describe("Transactions API", () => {
+  beforeEach(() => {
+    (mockDb.query.gifts.findMany as jest.Mock).mockResolvedValue(mockGifts);
+    (mockDb.select as jest.Mock).mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        where: jest.fn().mockResolvedValue([{ value: 2 }]),
+      }),
+    });
   });
-});
 
-afterEach(() => jest.clearAllMocks());
+  afterEach(() => jest.clearAllMocks());
 
-test("401 when unauthenticated", async () => {
-  const res = await GET(makeRequest({}, null));
-  expect(res.status).toBe(401);
-});
+  test("401 when unauthenticated", async () => {
+    const res = await GET(makeRequest({}, null));
+    expect(res.status).toBe(401);
+  });
 
-test("400 on invalid type param", async () => {
-  const res = await GET(makeRequest({ type: "unknown" }));
-  expect(res.status).toBe(400);
-});
+  test("400 on invalid type param", async () => {
+    const res = await GET(makeRequest({ type: "unknown" }));
+    expect(res.status).toBe(400);
+  });
 
-test("400 on invalid page param", async () => {
-  const res = await GET(makeRequest({ page: "0" }));
-  expect(res.status).toBe(400);
-});
+  test("400 on invalid page param", async () => {
+    const res = await GET(makeRequest({ page: "0" }));
+    expect(res.status).toBe(400);
+  });
 
-test("400 on limit exceeding 100", async () => {
-  const res = await GET(makeRequest({ limit: "999" }));
-  expect(res.status).toBe(400);
-});
+  test("400 on limit exceeding 100", async () => {
+    const res = await GET(makeRequest({ limit: "999" }));
+    expect(res.status).toBe(400);
+  });
 
-test("returns paginated transactions with defaults", async () => {
-  const res = await GET(makeRequest());
-  expect(res.status).toBe(200);
-  const body = await res.json();
-  expect(body.total).toBe(2);
-  expect(body.page).toBe(1);
-  expect(body.limit).toBe(10);
-  expect(body.data).toHaveLength(2);
-  expect(body.data[0].id).toBe("gift-1");
-  expect(body.data[1].id).toBe("gift-2");
-});
+  test("returns paginated transactions with defaults", async () => {
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.total).toBe(2);
+    expect(body.page).toBe(1);
+    expect(body.limit).toBe(10);
+    expect(body.data).toHaveLength(2);
+    expect(body.data[0].id).toBe("gift-1");
+    expect(body.data[1].id).toBe("gift-2");
+  });
 
-test("pagination params are respected", async () => {
-  await GET(makeRequest({ page: "2", limit: "5" }));
-  expect(mockDb.query.gifts.findMany).toHaveBeenCalledWith(
-    expect.objectContaining({
-      limit: 5,
-      offset: 5,
-    }),
-  );
-});
+  test("pagination params are respected", async () => {
+    await GET(makeRequest({ page: "2", limit: "5" }));
+    expect(mockDb.query.gifts.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        limit: 5,
+        offset: 5,
+      }),
+    );
+  });
 
-test("400 on non-integer page param", async () => {
-  const res = await GET(makeRequest({ page: "1abc" }));
-  expect(res.status).toBe(400);
-});
+  test("400 on non-integer page param", async () => {
+    const res = await GET(makeRequest({ page: "1abc" }));
+    expect(res.status).toBe(400);
+  });
 
-test("400 on non-integer limit param", async () => {
-  const res = await GET(makeRequest({ limit: "10.5" }));
-  expect(res.status).toBe(400);
+  test("400 on non-integer limit param", async () => {
+    const res = await GET(makeRequest({ limit: "10.5" }));
+    expect(res.status).toBe(400);
+  });
 });

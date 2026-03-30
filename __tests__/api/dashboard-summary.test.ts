@@ -25,63 +25,65 @@ function mockChain(result: Record<string, unknown>[]) {
   };
 }
 
-afterEach(() => jest.clearAllMocks());
+describe("Dashboard Summary API", () => {
+  afterEach(() => jest.clearAllMocks());
 
-test("returns 401 when unauthenticated", async () => {
-  const res = await GET(makeRequest(null));
-  expect(res.status).toBe(401);
-  const body = await res.json();
-  expect(body.success).toBe(false);
-  expect(body.error).toBe("Unauthorized");
-});
-
-test("returns 200 with summary data for authenticated user", async () => {
-  (mockDb.select as jest.Mock)
-    .mockReturnValueOnce(mockChain([{ balance: 150.5 }]))
-    .mockReturnValueOnce(mockChain([{ totalSent: 300 }]))
-    .mockReturnValueOnce(mockChain([{ totalReceived: 450.5 }]))
-    .mockReturnValueOnce(mockChain([{ transactionCount: 7 }]));
-
-  const res = await GET(makeRequest());
-  expect(res.status).toBe(200);
-  const body = await res.json();
-  expect(body.success).toBe(true);
-  expect(body.data).toEqual({
-    balance: 150.5,
-    totalSent: 300,
-    totalReceived: 450.5,
-    transactionCount: 7,
-  });
-});
-
-test("returns zero values when user has no wallet or gifts", async () => {
-  (mockDb.select as jest.Mock)
-    .mockReturnValueOnce(mockChain([{ balance: 0 }]))
-    .mockReturnValueOnce(mockChain([{ totalSent: 0 }]))
-    .mockReturnValueOnce(mockChain([{ totalReceived: 0 }]))
-    .mockReturnValueOnce(mockChain([{ transactionCount: 0 }]));
-
-  const res = await GET(makeRequest());
-  expect(res.status).toBe(200);
-  const body = await res.json();
-  expect(body.data).toEqual({
-    balance: 0,
-    totalSent: 0,
-    totalReceived: 0,
-    transactionCount: 0,
-  });
-});
-
-test("returns 500 on database error", async () => {
-  (mockDb.select as jest.Mock).mockReturnValue({
-    from: jest.fn().mockReturnValue({
-      where: jest.fn().mockRejectedValue(new Error("DB failure")),
-    }),
+  test("returns 401 when unauthenticated", async () => {
+    const res = await GET(makeRequest(null));
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("Unauthorized");
   });
 
-  const res = await GET(makeRequest());
-  expect(res.status).toBe(500);
-  const body = await res.json();
-  expect(body.success).toBe(false);
-  expect(body.error).toBe("Internal server error");
+  test("returns 200 with summary data for authenticated user", async () => {
+    (mockDb.select as jest.Mock)
+      .mockReturnValueOnce(mockChain([{ balance: 150.5 }]))
+      .mockReturnValueOnce(mockChain([{ totalSent: 300 }]))
+      .mockReturnValueOnce(mockChain([{ totalReceived: 450.5 }]))
+      .mockReturnValueOnce(mockChain([{ transactionCount: 7 }]));
+
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.success).toBe(true);
+    expect(body.data).toEqual({
+      balance: 150.5,
+      totalSent: 300,
+      totalReceived: 450.5,
+      transactionCount: 7,
+    });
+  });
+
+  test("returns zero values when user has no wallet or gifts", async () => {
+    (mockDb.select as jest.Mock)
+      .mockReturnValueOnce(mockChain([{ balance: 0 }]))
+      .mockReturnValueOnce(mockChain([{ totalSent: 0 }]))
+      .mockReturnValueOnce(mockChain([{ totalReceived: 0 }]))
+      .mockReturnValueOnce(mockChain([{ transactionCount: 0 }]));
+
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data).toEqual({
+      balance: 0,
+      totalSent: 0,
+      totalReceived: 0,
+      transactionCount: 0,
+    });
+  });
+
+  test("returns 500 on database error", async () => {
+    (mockDb.select as jest.Mock).mockReturnValue({
+      from: jest.fn().mockReturnValue({
+        where: jest.fn().mockRejectedValue(new Error("DB failure")),
+      }),
+    });
+
+    const res = await GET(makeRequest());
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.error).toBe("Internal server error");
+  });
 });

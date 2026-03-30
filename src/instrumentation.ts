@@ -5,6 +5,7 @@
  */
 
 import { checkMigrationStatus } from "./lib/db/migration-checker";
+import { startNotificationCleanupJob } from "./server/jobs/cleanupNotifications";
 
 export async function register() {
   // Only run on server-side
@@ -35,5 +36,7 @@ export async function register() {
       console.error("❌ Failed to check migration status:", error);
       console.error("⚠️  Server will continue, but this should be investigated.");
     }
+
+    startNotificationCleanupJob();
   }
 }

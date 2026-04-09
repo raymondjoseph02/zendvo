@@ -91,12 +91,17 @@ const OTPInput: React.FC<OTPInputProps> = ({
   };
 
   return (
-    <div className="flex gap-3 justify-between max-w-xs mx-auto md:mx-0 md:max-w-md">
+    <div 
+      className="flex gap-3 justify-between max-w-xs mx-auto md:mx-0 md:max-w-md"
+      role="group"
+      aria-label="One-time password"
+    >
       {otp.map((digit, index) => (
         <input
           key={index}
           type="text"
           inputMode="numeric"
+          autoComplete={index === 0 ? "one-time-code" : "off"}
           maxLength={1}
           ref={(ref) => {
             inputRefs.current[index] = ref;
@@ -106,6 +111,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
           onClick={() => handleClick(index)}
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
+          aria-label={`Digit ${index + 1} of ${length}`}
           className={`
             w-12 h-12 md:w-14 md:h-14 
             border rounded-[14px] 
@@ -114,7 +120,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
             transition-all duration-200
             ${
               error
-                ? "border-red-500 text-red-500 focus:border-red-500"
+                ? "border-red-500 text-red-500 focus:border-red-500 shadow-[0_0_0_2px_rgba(239,68,68,0.1)]"
                 : "border-[#E5E7EB] text-[#18181B] focus:border-[#6c5ce7]"
             }
           `}

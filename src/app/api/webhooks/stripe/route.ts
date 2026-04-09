@@ -54,23 +54,46 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[STRIPE_WEBHOOK] Received event: ${event.type}`);
+    console.log(`[STRIPE_WEBHOOK] Handling event type: ${event.type}`);
 
-    /**
-     * Handle Stripe events here.
-     * Common events:
-     * - payment_intent.succeeded: Payment was successful
-     * - payment_intent.payment_failed: Payment failed
-     * - checkout.session.completed: Checkout was successful
-     */
+    let result;
 
-    // TODO: Implement specific event handling logic
-    // Example:
-    // if (event.type === 'payment_intent.succeeded') {
-    //   const paymentIntent = event.data.object as Stripe.PaymentIntent;
-    //   // Update gift status in database
-    // }
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "payment_intent.succeeded"
+    ) {
+      const sessionOrIntent = event.data.object as any;
+      const giftId = sessionOrIntent.metadata?.giftId;
+      const paymentIntentId =
+        event.type === "payment_intent.succeeded"
+          ? sessionOrIntent.id
+          : sessionOrIntent.payment_intent;
 
-    return NextResponse.json({ received: true }, { status: 200 });
+      console.log(
+        `[STRIPE_WEBHOOK] Processing successful payment for gift: ${giftId}, reference: ${paymentIntentId}`,
+      );
+
+      if (giftId) {
+        const { markGiftPaymentSuccessfulByReference } = await import(
+          "@/server/services/giftStatusService"
+        );
+        result = await markGiftPaymentSuccessfulByReference(
+          paymentIntentId || giftId,
+          "stripe",
+        );
+        if (!result.success && !paymentIntentId) {
+          // Fallback to checking by ID if reference is not found/stored yet
+          // In zendvo, payment_reference is usually the provider's reference (PI or Session ID)
+        }
+      } else {
+        console.warn("[STRIPE_WEBHOOK] No giftId found in metadata");
+      }
+    }
+
+    return NextResponse.json(
+      { received: true, processed: result?.success ?? false },
+      { status: 200 },
+    );
   } catch (error) {
     console.error("[STRIPE_WEBHOOK_ERROR]", error);
     return createProblemDetails(

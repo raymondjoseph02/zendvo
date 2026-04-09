@@ -54,12 +54,14 @@ export const users = pgTable(
     lastLogin: timestamp("last_login"),
     lastOtpSentAt: timestamp("last_otp_sent_at"),
     isPhoneVerified: boolean("is_phone_verified").default(false).notNull(),
+    phoneLast4: text("phone_last_4"),
   },
   (table) => {
     return [
       unique("users_phone_number_unique").on(table.phoneNumber),
       unique("users_email_unique").on(table.email),
       unique("users_username_unique").on(table.username),
+      index("users_phone_number_idx").on(table.phoneNumber),
       index("users_status_idx").on(table.status),
       index("users_created_at_idx").on(table.createdAt),
     ];
@@ -180,6 +182,8 @@ export const gifts = pgTable(
       index("gift_share_link_token_idx").on(table.shareLinkToken),
       index("gift_slug_idx").on(table.slug),
       index("gift_short_code_idx").on(table.shortCode),
+      index("gift_blockchain_tx_hash_idx").on(table.blockchainTxHash),
+      unique("gift_payment_reference_unique").on(table.paymentReference),
     ];
   },
 );

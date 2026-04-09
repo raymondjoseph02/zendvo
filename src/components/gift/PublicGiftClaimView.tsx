@@ -4,6 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Gift, LoaderCircle, Sparkles } from "lucide-react";
 import Button from "@/components/Button";
 import { launchCelebrationConfetti } from "@/lib/confetti";
+import { GiftRevealStage } from "./GiftRevealStage";
+import { ScratchReveal } from "./ScratchReveal";
+import { playMysterySound, triggerHaptic } from "@/lib/mystery-ux";
 
 type GiftSummary = {
   recipient: {
@@ -133,6 +136,7 @@ export default function PublicGiftClaimView({
       }
 
       setClaimResult(payload as ClaimResponse);
+      triggerHaptic("heavy");
     } catch (claimError) {
       setError(
         claimError instanceof Error
@@ -175,13 +179,23 @@ export default function PublicGiftClaimView({
 
           {gift ? (
             <div className="mt-8 grid w-full gap-4 rounded-[28px] bg-[#F8FAFF] p-6 text-left sm:grid-cols-2">
-              <div>
+              <div className="sm:col-span-2 flex justify-center py-4">
+                <GiftRevealStage 
+                  amount={gift.amount.toString()} 
+                  currency={gift.currency}
+                  onRevealComplete={() => {
+                    playMysterySound("reveal");
+                    triggerHaptic("medium");
+                  }}
+                />
+              </div>
+              <div className="border-t border-slate-100 pt-6">
                 <p className="text-sm text-[#717182]">Recipient</p>
                 <p className="mt-1 font-medium text-[#18181B]">
                   {gift.recipient.name || "Gift recipient"}
                 </p>
               </div>
-              <div>
+              <div className="border-t border-slate-100 pt-6">
                 <p className="text-sm text-[#717182]">Amount</p>
                 <p className="mt-1 font-medium text-[#18181B]">
                   {currencyFormatter(gift.currency, gift.amount)}
@@ -190,8 +204,26 @@ export default function PublicGiftClaimView({
             </div>
           ) : null}
 
+          {gift?.message ? (
+             <div className="mt-6 w-full text-left">
+               <p className="text-sm text-[#717182] mb-3 ml-2">Secret Message</p>
+               <ScratchReveal 
+                width={560} 
+                height={160}
+                onComplete={() => {
+                   playMysterySound("reveal");
+                   triggerHaptic("light");
+                }}
+               >
+                 <p className="text-center font-medium text-slate-700 italic px-8">
+                   "{gift.message}"
+                 </p>
+               </ScratchReveal>
+             </div>
+          ) : null}
+
           {claimResult.message ? (
-            <p className="mt-6 text-sm text-[#717182]">{claimResult.message}</p>
+            <p className="mt-8 text-sm text-[#717182]">{claimResult.message}</p>
           ) : null}
         </div>
       </div>

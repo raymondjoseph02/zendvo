@@ -25,18 +25,21 @@ export default function LandingPage() {
             <Link
               href="#features"
               className="hover:text-[#5A42DE] transition-colors"
+              aria-current="false"
             >
               Features
             </Link>
             <Link
               href="#how-it-works"
               className="hover:text-[#5A42DE] transition-colors"
+              aria-current="false"
             >
               How it works
             </Link>
             <Link
               href="#pricing"
               className="hover:text-[#5A42DE] transition-colors"
+              aria-current="false"
             >
               Pricing
             </Link>
@@ -121,52 +124,96 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section id="features" className="py-24 bg-[#F7F7FC]">
+      {/* How it Works Section */}
+      <section id="how-it-works" className="py-24 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
-            <h2 className="text-4xl font-bold text-gray-900">
-              Everything you need to send the perfect gift
-            </h2>
-            <p className="text-[#717182] text-lg">
-              We&apos;ve built a suite of tools to make digital gifting personal and
-              delightful.
-            </p>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4 font-br-firma">How Zendvo Works</h2>
+            <p className="text-[#717182] max-w-xl mx-auto">Three simple steps to send a memory that lasts.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                <Gift size={24} />
-              </div>
-              <h3 className="text-xl font-bold mb-4">Instant Delivery</h3>
-              <p className="text-[#717182]">
-                Send gifts instantly via email or phone. No more waiting for
-                shipping.
-              </p>
-            </div>
+          <div className="grid md:grid-cols-3 gap-12 relative">
+            {/* Step 1 */}
+            <motion.div 
+               whileHover={{ y: -10 }}
+               className="flex flex-col items-center text-center p-8 rounded-[40px] bg-[#F8FAFF] border border-slate-50 shadow-sm"
+            >
+              <div className="w-16 h-16 bg-[#5A42DE] rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg shadow-[#5A42DE]/20">1</div>
+              <h3 className="text-2xl font-bold mb-4">Create Your Gift</h3>
+              <p className="text-[#717182]">Choose an amount, add a personal message, and pick a beautiful digital wrapper.</p>
+            </motion.div>
 
-            <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-6">
-                <Zap size={24} />
-              </div>
-              <h3 className="text-xl font-bold mb-4">Personalized</h3>
-              <p className="text-[#717182]">
-                Add beautiful templates and personal messages to every gift you
-                send.
-              </p>
-            </div>
+            {/* Step 2 */}
+            <motion.div 
+               whileHover={{ y: -10 }}
+               className="flex flex-col items-center text-center p-8 rounded-[40px] bg-[#F8FAFF] border border-slate-50 shadow-sm"
+            >
+              <div className="w-16 h-16 bg-[#5A42DE] rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg shadow-[#5A42DE]/20">2</div>
+              <h3 className="text-2xl font-bold mb-4">Set the Unlock Date</h3>
+              <p className="text-[#717182]">Decide exactly when the recipient can see and claim their gift. The mystery builds until then.</p>
+            </motion.div>
 
-            <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center mb-6">
-                <Shield size={24} />
-              </div>
-              <h3 className="text-xl font-bold mb-4">Secure & Private</h3>
-              <p className="text-[#717182]">
-                Bank-grade security ensures your transactions and data are
-                always safe.
-              </p>
-            </div>
+            {/* Step 3 */}
+            <motion.div 
+               whileHover={{ y: -10 }}
+               className="flex flex-col items-center text-center p-8 rounded-[40px] bg-[#F8FAFF] border border-slate-50 shadow-sm"
+            >
+              <div className="w-16 h-16 bg-[#5A42DE] rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-6 shadow-lg shadow-[#5A42DE]/20">3</div>
+              <h3 className="text-2xl font-bold mb-4">Share the Magic</h3>
+              <p className="text-[#717182]">Send the unique link. Once the timer hits zero, they can unwrap and claim straight to their wallet.</p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section id="testimonials" className="py-24 bg-[#F8FAFF]">
+        <div className="max-w-7xl mx-auto px-6">
+          <h2 className="text-4xl font-bold text-center mb-16 font-br-firma">Loved by Givers Everywhere</h2>
+          <div className="flex overflow-x-auto gap-8 pb-8 no-scrollbar">
+            {[
+              { name: "Adewale Y.", role: "Early Adopter", text: "Zendvo makes sending money feel like a real gift. The anticipation of the unlock date is what makes it special." },
+              { name: "Chidi O.", role: "Sender", text: "The bulk gift feature is a lifesaver for our office rewards. Everyone loves the surprise reveal!" },
+              { name: "Eze K.", role: "Recipient", text: "Receiving a Zendvo gift was such a fun experience. Scratching to see the message felt so personal." }
+            ].map((t, i) => (
+              <motion.div 
+                key={i}
+                className="min-w-[350px] bg-white p-8 rounded-[40px] shadow-sm border border-slate-50 flex flex-col justify-between"
+                whileHover={{ scale: 1.02 }}
+              >
+                <p className="text-[#717182] text-lg italic mb-6">"{t.text}"</p>
+                <div>
+                  <p className="font-bold text-slate-900">{t.name}</p>
+                  <p className="text-sm text-[#5A42DE] font-medium">{t.role}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Accordion */}
+      <section id="faq" className="py-24 bg-white">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-4xl font-bold text-center mb-16 font-br-firma">Frequently Asked Questions</h2>
+          <div className="space-y-4">
+            {[
+              { q: "How secure is Zendvo?", a: "We use bank-grade encryption and the Stellar blockchain to ensure your funds are locked and secure until the release date." },
+              { q: "What currencies do you support?", a: "Currently we support NGN and USDC, allowing for stable global and local transfers." },
+              { q: "Can I cancel a gift after sending?", a: "Gifts can be cancelled only if they haven't been claimed and the unlock date hasn't passed. A small processing fee may apply." }
+            ].map((item, i) => (
+              <details key={i} className="group bg-[#F8FAFF] rounded-[24px] overflow-hidden border border-slate-50">
+                <summary className="flex items-center justify-between p-6 cursor-pointer list-none">
+                  <span className="text-lg font-bold text-slate-900">{item.q}</span>
+                  <span className="transition-transform group-open:rotate-180">
+                    <ArrowRight className="w-5 h-5 text-[#5A42DE] rotate-90" />
+                  </span>
+                </summary>
+                <div className="px-6 pb-6 text-[#717182] leading-relaxed">
+                  {item.a}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </section>

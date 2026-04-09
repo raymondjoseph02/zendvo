@@ -1,7 +1,6 @@
 {
-  "id": "c1741252-56d2-4825-8029-24386ef6a311",
-  "id": "7713c465-d6e7-412d-97a3-3868c3e42b6a",
-  "prevId": "56a44295-676d-4e3e-b641-44e3341addf1",
+  "id": "56a44295-676d-4e3e-b641-44e3341addf1",
+  "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -163,7 +162,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'pending_otp'"
-          "default": "'PENDING'"
         },
         "otp_hash": {
           "name": "otp_hash",
@@ -204,13 +202,6 @@
           "notNull": true,
           "default": false
         },
-        "is_anonymous": {
-          "name": "is_anonymous",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "unlock_datetime": {
           "name": "unlock_datetime",
           "type": "timestamp",
@@ -244,24 +235,6 @@
         "share_link_token": {
           "name": "share_link_token",
           "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "cover_image_id": {
-          "name": "cover_image_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "link_expires_at": {
-          "name": "link_expires_at",
-          "type": "timestamp",
           "primaryKey": false,
           "notNull": false
         },
@@ -367,21 +340,6 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
-        },
-        "gift_slug_idx": {
-          "name": "gift_slug_idx",
-          "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
         }
       },
       "foreignKeys": {
@@ -433,13 +391,6 @@
           "nullsNotDistinct": false,
           "columns": [
             "share_link_token"
-          ]
-        },
-        "gifts_slug_unique": {
-          "name": "gifts_slug_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug"
           ]
         }
       },
@@ -713,12 +664,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "device_id": {
-          "name": "device_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -842,19 +787,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "otp_failed_attempts": {
-          "name": "otp_failed_attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "otp_attempts_window_start": {
-          "name": "otp_attempts_window_start",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -880,62 +812,12 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
-        },
-        "is_phone_verified": {
-          "name": "is_phone_verified",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
-      "indexes": {
-        "users_status_idx": {
-          "name": "users_status_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "users_created_at_idx": {
-          "name": "users_created_at_idx",
-          "columns": [
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "users_phone_number_unique": {
-          "name": "users_phone_number_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "phone_number"
-          ]
-        },
-        "users_email_unique": {
-          "name": "users_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
@@ -1067,11 +949,6 @@
         "completed",
         "sent",
         "failed"
-        "PENDING",
-        "FUNDED",
-        "LOCKED",
-        "UNLOCKED",
-        "CLAIMED"
       ]
     },
     "public.user_status": {

@@ -147,7 +147,6 @@ export async function checkOTPRequestRateLimitByUserId(
 }
 
 export function generateOTP(): string {
-  // CSPRNG compliant
   return crypto.randomInt(100000, 999999).toString();
 }
 
@@ -179,7 +178,6 @@ export function verifyOTPHash(
 
 export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; message: string; error?: string }> {
   try {
-    // Validate and sanitize phone number
     if (!validateE164PhoneNumber(phoneNumber)) {
       return {
         success: false,
@@ -190,7 +188,6 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
 
     const sanitizedPhone = sanitizePhoneNumber(phoneNumber);
 
-    // Find user by phone number
     const user = await db.query.users.findFirst({
       where: eq(users.phoneNumber, sanitizedPhone),
     });
@@ -211,15 +208,11 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
       };
     }
 
-    // Generate and store OTP
     const otp = generateOTP();
     await storeOTP(user.id, otp);
 
-    // TODO: Integrate with SMS provider (e.g., Twilio, AWS SNS)
-    // For now, we'll log the OTP (in production, this should send via SMS)
     console.log(`[SMS_OTP] Phone: ${sanitizedPhone}, OTP: ${otp}`);
 
-    // Mock SMS sending - replace with actual SMS provider integration
     const smsResult = await sendSMSViaProvider(sanitizedPhone, `Your Zendvo verification code is: ${otp}. Valid for 10 minutes.`);
 
     if (!smsResult.success) {
@@ -251,7 +244,6 @@ export async function sendOTP(phoneNumber: string): Promise<{ success: boolean; 
 
 async function sendSMSViaProvider(phoneNumber: string, message: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // For now, simulate successful SMS sending
     console.log(`[MOCK_SMS] To: ${phoneNumber}, Message: ${message}`);
     return { success: true };
   } catch (error) {
@@ -264,7 +256,6 @@ export async function storeOTP(userId: string, otp: string) {
   const storedValue = `${salt}:${hash}`;
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  // Invalidate previous unused OTPs
   await db
     .update(emailVerifications)
     .set({ isUsed: true })
@@ -357,20 +348,17 @@ export async function verifyOTP(userId: string, otp: string, ipAddress?: string)
       .set({ attempts: newAttempts })
       .where(eq(emailVerifications.id, verification.id));
 
-    // Track cumulative failures for wide window lock
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     let cumulativeFailures = (user?.otpFailedAttempts || 0) + 1;
     let windowStart = user?.otpAttemptsWindowStart;
 
-    // Reset window if it's been more than 1 hour
     if (!windowStart || windowStart < oneHourAgo) {
       cumulativeFailures = 1;
       windowStart = now;
     }
 
-    // Update cumulative failure tracking
     await db
       .update(users)
       .set({
@@ -379,12 +367,10 @@ export async function verifyOTP(userId: string, otp: string, ipAddress?: string)
       })
       .where(eq(users.id, userId));
 
-    // IP-based suspicious activity tracking
     if (ipAddress) {
       const now = Date.now();
       let state = otpFailuresByIp.get(ipAddress);
 
-      // Reset tracking state if window has expired since last attempt
       if (state && now - state.lastAttempt > IP_TRACKING_WINDOW_MS) {
         otpFailuresByIp.delete(ipAddress);
         state = undefined;
@@ -422,7 +408,6 @@ export async function verifyOTP(userId: string, otp: string, ipAddress?: string)
       remainingAttempts: 5 - newAttempts,
     });
 
-    // Check for 10 attempts in 1 hour (wide window lock)
     if (cumulativeFailures >= 10) {
       const lockUntil = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
       await db
@@ -450,7 +435,6 @@ export async function verifyOTP(userId: string, otp: string, ipAddress?: string)
       };
     }
 
-    // Check for 5 attempts on current OTP (narrow window lock)
     if (newAttempts >= 5) {
       const lockUntil = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes
       await db.update(users).set({ lockUntil }).where(eq(users.id, userId));
@@ -478,7 +462,6 @@ export async function verifyOTP(userId: string, otp: string, ipAddress?: string)
     };
   }
 
-  // Success path
   await db
     .delete(emailVerifications)
     .where(eq(emailVerifications.id, verification.id));

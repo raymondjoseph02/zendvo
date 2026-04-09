@@ -11,36 +11,7 @@ export const TransactionTable = () => {
     amount: string;
     dateTIme: string;
     status: string;
-  }[] = [
-    // {
-    //   id: "NBV890QWE234",
-    //   type: "Gift Received",
-    //   amount: "$200",
-    //   dateTIme: "Dec 12, 2023 10:00 AM",
-    //   status: "Completed",
-    // },
-    // {
-    //   id: "POI456JKL789",
-    //   type: "Withdrawal",
-    //   amount: "$50",
-    //   dateTIme: "Dec 05, 2023 04:30 PM",
-    //   status: "Pending",
-    // },
-    // {
-    //   id: "ZXC987MNO123",
-    //   type: "Gift Sent",
-    //   amount: "$300",
-    //   dateTIme: "Dec 05, 2023 04:30 PM",
-    //   status: "Completed",
-    // },
-    // {
-    //   id: "LKJ654TRE321",
-    //   type: "Top Up",
-    //   amount: "$100",
-    //   dateTIme: "Nov 15, 2023 02:45 PM",
-    //   status: "Failed",
-    // },
-  ];
+  }[] = [];
   return (
     <div className="bg-white  rounded-4xl space-y-2.5 p-4 min-h-102 flex flex-col">
       <div className="flex items-center justify-between ">

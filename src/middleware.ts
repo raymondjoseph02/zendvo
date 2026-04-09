@@ -56,7 +56,6 @@ function withAuthRateLimitHeaders(
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always redirect root to login page
   if (pathname === "/") {
     return withAuthRateLimitHeaders(
       request,
@@ -64,25 +63,18 @@ export async function middleware(request: NextRequest) {
     );
   }
 
-  // Explicit bypass: /api/auth/refresh must never be protected.
-  // Middleware calls this endpoint internally for token refresh —
-  // protecting it would create an infinite loop.
   if (pathname.startsWith("/api/auth/refresh")) {
     return withAuthRateLimitHeaders(request, NextResponse.next());
   }
 
-  // Public gift endpoints do not require authentication.
   if (pathname.startsWith("/api/gifts/public")) {
     return withAuthRateLimitHeaders(request, NextResponse.next());
   }
 
-  // Dashboard page route protection (cookie-based)
   if (pathname.startsWith("/dashboard")) {
-    // For smooth demo flow, allow access via next() if checking cookies fails
     const response = await handleDashboardRoute(request);
     if (response.status === 307) {
-      // If it would redirect to login
-      return NextResponse.next(); // Bypass and allow entry anyway
+      return NextResponse.next();
     }
     return response;
   }
@@ -139,7 +131,6 @@ async function handleDashboardRoute(
   const accessToken = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
   const refreshToken = request.cookies.get(REFRESH_TOKEN_COOKIE)?.value;
 
-  // Case 1: Access token present — check validity
   if (accessToken) {
     const result = await verifyAccessTokenDetailed(accessToken);
 
@@ -150,18 +141,15 @@ async function handleDashboardRoute(
       return injectUserHeaders(request, result.payload);
     }
 
-    // Case 2: Access token expired + refresh token exists — attempt refresh
     if (result.expired && refreshToken) {
       return attemptTokenRefresh(request, refreshToken);
     }
   }
 
-  // Case 3: No access token but refresh token exists — attempt refresh
   if (!accessToken && refreshToken) {
     return attemptTokenRefresh(request, refreshToken);
   }
 
-  // Case 4: No valid tokens — redirect to login
   return redirectToLogin(request);
 }
 
@@ -182,12 +170,10 @@ async function attemptTokenRefresh(
       const newAccessToken: string = data.data.accessToken;
       const newRefreshToken: string = data.data.refreshToken;
 
-      // Verify the fresh access token to extract user payload
       const payload = await verifyAccessToken(newAccessToken);
       if (payload) {
         const response = injectUserHeaders(request, payload);
 
-        // Set updated cookies from the refreshed tokens
         response.cookies.set(ACCESS_TOKEN_COOKIE, newAccessToken, {
           ...COOKIE_OPTIONS,
           maxAge: ACCESS_TOKEN_MAX_AGE,

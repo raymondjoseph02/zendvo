@@ -105,9 +105,10 @@ export async function POST(request: NextRequest) {
           template: sanitizedTemplate,
           coverImageId: sanitizedCoverImageId,
           unlockDatetime: utcUnlockDatetime,
-          status: "pending_otp", // Keeping consistency with individual flow
+          status: "pending_otp" as "pending_otp", // Keeping consistency with individual flow
           slug,
           shortCode,
+          totalAmount: giftInput.amount,
         });
       }
 

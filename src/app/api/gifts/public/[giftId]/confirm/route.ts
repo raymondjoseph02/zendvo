@@ -208,7 +208,7 @@ export async function POST(
       error instanceof Error &&
       error.message === "Unsupported currency. Accepted: NGN, USD"
     ) {
-      return createProblemDetails("about:blank", "Bad Request", 400, error);
+      return createProblemDetails("about:blank", "Bad Request", 400, error.message);
     }
     if (
       error instanceof Error &&

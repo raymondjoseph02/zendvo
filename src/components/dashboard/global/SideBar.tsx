@@ -13,17 +13,24 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { useAuthContext } from "@/context/AuthContext";
 
-const mainMenuItems = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ active?: boolean }>;
+  badge?: number;
+}
+
+const mainMenuItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard/sender", icon: DashboardIcon },
   { name: "Gifts", href: "/dashboard/gifts", icon: GiftIcon, badge: 5 },
   { name: "Wallet", href: "/dashboard/wallet", icon: WalletIcon },
 ];
 
-const generalMenuItems = [
+const generalMenuItems: NavItem[] = [
   { name: "Profile", href: "/profile", icon: ProfileIcon },
   { name: "Settings", href: "/settings", icon: SettingsIcon },
   { name: "Help Desk", href: "/help", icon: HelpIcon },
@@ -34,7 +41,7 @@ interface SideBarProps {
   onClose: () => void;
 }
 
-const normalizePath = (path: string) => {
+const normalizePath = (path: string | null) => {
   if (!path || path === "/") {
     return "/";
   }
@@ -44,7 +51,7 @@ const normalizePath = (path: string) => {
 
 const getCurrentNavHref = (
   items: Array<{ href: string }>,
-  pathname: string,
+  pathname: string | null,
 ) => {
   const normalizedPathname = normalizePath(pathname);
 
@@ -106,6 +113,7 @@ export const SideBar = ({ isOpen, onClose }: SideBarProps) => {
       applyAriaCurrent = true,
     }: { compact?: boolean; applyAriaCurrent?: boolean } = {},
   ) => {
+    const Icon = item.icon;
     const active = currentNavHref === item.href;
 
     return (
@@ -123,7 +131,7 @@ export const SideBar = ({ isOpen, onClose }: SideBarProps) => {
         }`}
       >
         <div className="flex items-center gap-3">
-          <item.icon active={active} />
+          <Icon active={active} />
           <span className="text-sm font-medium">{item.name}</span>
         </div>
         {!compact && item.badge && (

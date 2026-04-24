@@ -3,9 +3,12 @@ import Stripe from "stripe";
 /**
  * Stripe client configuration for gift creation payments.
  */
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2026-01-28.clover",
-});
+export const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY || "sk_test_placeholder_for_build_step",
+  {
+    apiVersion: "2026-01-28.clover",
+  }
+);
 
 export const createPaymentIntent = async (
   amount: number,

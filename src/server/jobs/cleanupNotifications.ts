@@ -34,7 +34,7 @@ export function startNotificationCleanupJob() {
   setInterval(run, CLEANUP_INTERVAL_MS);
 }
 
-if (require.main === module) {
+if (typeof require !== "undefined" && require.main === module) {
   cleanupOldNotifications()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));

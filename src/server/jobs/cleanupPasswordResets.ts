@@ -37,7 +37,7 @@ export async function cleanupExpiredTokens() {
   }
 }
 
-if (require.main === module) {
+if (typeof require !== "undefined" && require.main === module) {
   cleanupExpiredTokens()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));

@@ -13,5 +13,6 @@ const pool = new Pool({
 export const db = drizzle(pool, { schema });
 export default db;
 
-// Export migration utilities
-export { checkMigrationStatus, runMigrations } from "./migration-checker";
+
+// Migration utilities should be imported directly from ./migration-checker 
+// to avoid bundling Node.js modules in Edge Runtime

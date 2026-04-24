@@ -4,12 +4,16 @@
  * https://nextjs.org/docs/app/building-your-application/optimizing/instrumentation
  */
 
-import { checkMigrationStatus } from "./lib/db/migration-checker";
-import { startNotificationCleanupJob } from "./server/jobs/cleanupNotifications";
+// Static imports removed to prevent Edge Runtime bundling issues
+// import { checkMigrationStatus } from "./lib/db/migration-checker";
+// import { startNotificationCleanupJob } from "./server/jobs/cleanupNotifications";
 
 export async function register() {
   // Only run on server-side
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { checkMigrationStatus } = await import("./lib/db/migration-checker");
+    const { startNotificationCleanupJob } = await import("./server/jobs/cleanupNotifications");
+
     console.log("🔍 Checking database migration status...");
 
     try {

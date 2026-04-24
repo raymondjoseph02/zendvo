@@ -14,7 +14,7 @@ export async function cleanupExpiredOTPRecords(): Promise<number> {
   }
 }
 
-if (require.main === module) {
+if (typeof require !== "undefined" && require.main === module) {
   cleanupExpiredOTPRecords()
     .then(() => process.exit(0))
     .catch(() => process.exit(1));

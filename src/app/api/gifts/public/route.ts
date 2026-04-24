@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
       senderAvatar,
     } = body;
 
+    let utcUnlockDatetime: Date | null = null;
+
     if (!recipientId || !amount || !senderName || !senderEmail) {
       return createProblemDetails(
         "about:blank",
@@ -97,8 +99,8 @@ export async function POST(request: NextRequest) {
 
     if (unlockDatetime !== undefined && unlockDatetime !== null) {
       try {
-        const utcDate = convertToUTCDate(unlockDatetime);
-        if (!utcDate || !validateFutureDatetime(utcDate)) {
+        utcUnlockDatetime = convertToUTCDate(unlockDatetime);
+        if (!utcUnlockDatetime || !validateFutureDatetime(utcUnlockDatetime)) {
           return createProblemDetails(
             "about:blank",
             "Unprocessable Entity",
@@ -111,7 +113,7 @@ export async function POST(request: NextRequest) {
           "about:blank",
           "Unprocessable Entity",
           422,
-          error,
+          error instanceof Error ? error.message : "Invalid date format",
         );
       }
     }
@@ -189,6 +191,7 @@ export async function POST(request: NextRequest) {
         senderAvatar: sanitizedSenderAvatar,
         slug,
         shortCode,
+        totalAmount: amount,
       })
       .returning();
 

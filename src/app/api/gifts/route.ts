@@ -9,10 +9,13 @@ import {
   validateUnlockAt,
   convertToUTCDate,
   formatAsUTCISO,
+  CreateGiftSchema,
 } from "@/lib/validation";
 import { generateOTP, storeGiftOTP } from "@/server/services/otpService";
 import { sendGiftConfirmationOTP } from "@/server/services/emailService";
 import { calculateFee } from "@/lib/fees";
+import { generateUniqueSlug } from "@/lib/slug";
+import { generateUniqueShortCode } from "@/lib/shortCode";
 
 export async function GET() {
   return paginatedResponse([], 0, 1, 10);
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
         "about:blank",
         "Bad Request",
         400,
-        firstError,
+        firstError.message,
       );
     }
 
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
           "about:blank",
           "Bad Request",
           400,
-          unlockValidation,
+          unlockValidation.error || "Invalid delivery date",
         );
       }
     }
@@ -128,10 +131,11 @@ export async function POST(request: NextRequest) {
         message: sanitizedMessage,
         template: sanitizedTemplate,
         coverImageId: sanitizedCoverImageId,
-        unlockDatetime: utcUnlockDatetime,
-        status: "pending_otp",
+        unlockDatetime: unlock_at ? convertToUTCDate(unlock_at) : null,
+        status: "pending_otp" as "pending_otp",
         slug,
         shortCode,
+        totalAmount: amount,
       })
       .returning();
 

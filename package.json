@@ -37,7 +37,8 @@
     "tailwindcss": "^4.1.18",
     "zod": "^4.3.6",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "drizzle-kit": "^0.31.9"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -50,7 +51,6 @@
     "@types/pg": "^8.18.0",
     "@types/qrcode": "^1.5.6",
     "babel-plugin-react-compiler": "1.0.0",
-    "drizzle-kit": "^0.31.9",
     "eslint": "^9",
     "eslint-config-next": "16.1.2",
     "eslint-plugin-jest": "^29.15.1",

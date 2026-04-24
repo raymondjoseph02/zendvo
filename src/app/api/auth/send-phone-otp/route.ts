@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const result = await sendOTP(phoneNumber);
 
     if (!result.success) {
-      return createProblemDetails("about:blank", "Bad Request", 400, result);
+      return createProblemDetails("about:blank", "Bad Request", 400, result.message);
     }
 
     return NextResponse.json(

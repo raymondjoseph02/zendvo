@@ -43,7 +43,7 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
     try {
       // TODO: replace with your real balance API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      setBalance(250.00); // placeholder until real API is connected
+      setBalance(250.0); // placeholder until real API is connected
     } catch (error) {
       console.error("Failed to fetch balance", error);
     } finally {
@@ -75,13 +75,20 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
           {/* Amount */}
           <div className="flex justify-between items-center pt-2">
             <p className={rowLabel}>Amount</p>
-            <p className={rowValue}>${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            <p className={rowValue}>
+              ${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            </p>
           </div>
 
           {/* Processing Fee */}
           <div className="flex justify-between items-center pt-2">
             <p className={rowLabel}>Processing Fee</p>
-            <p className={rowValue}>${processingFee.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+            <p className={rowValue}>
+              $
+              {processingFee.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+              })}
+            </p>
           </div>
 
           {/* Total Amount */}
@@ -115,9 +122,9 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
           </div>
 
           {/* Message */}
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5 pt-2 flex flex-col">
             <p className={rowLabel}>Message for the recipient</p>
-            <p className="text-[13px] text-[#717182] bg-[#FAFAFB] p-3 rounded-xl border border-[#EEEEF3] break-words">
+            <p className="text-[13px] text-[#717182] bg-[#FAFAFB] p-3 rounded-xl border border-[#EEEEF3] ">
               {message || "No message provided."}
             </p>
           </div>
@@ -126,10 +133,15 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
         {/* --- Check Balance Section --- */}
         <div className="mt-4 flex items-center justify-between bg-white border border-[#EEEEF3] rounded-2xl px-4 py-3 shadow-sm">
           <div>
-            <p className="text-[13px] font-medium text-[#18181B]">Your Balance</p>
+            <p className="text-[13px] font-medium text-[#18181B]">
+              Your Balance
+            </p>
             {balance !== null ? (
               <p className="text-[20px] font-semibold text-[#5A42DE]">
-                ${balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                $
+                {balance.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
               </p>
             ) : (
               <p className="text-[13px] text-[#717182]">
@@ -153,7 +165,9 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
                 >
                   <circle
                     className="opacity-25"
-                    cx="12" cy="12" r="10"
+                    cx="12"
+                    cy="12"
+                    r="10"
                     stroke="currentColor"
                     strokeWidth="4"
                   />
@@ -173,8 +187,13 @@ const ReviewGiftDetails: React.FC<ReviewGiftDetailsProps> = ({
 
         <p className="text-[11px] text-[#717182] mt-6 text-center">
           By proceeding, you have accepted Zendvo&apos;s{" "}
-          <a href="#" className="text-[#5A42DE] font-medium hover:underline">Terms</a> and{" "}
-          <a href="#" className="text-[#5A42DE] font-medium hover:underline">Privacy Policy</a>
+          <a href="#" className="text-[#5A42DE] font-medium hover:underline">
+            Terms
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-[#5A42DE] font-medium hover:underline">
+            Privacy Policy
+          </a>
         </p>
 
         <Button

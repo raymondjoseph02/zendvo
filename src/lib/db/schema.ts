@@ -227,6 +227,26 @@ export const notifications = pgTable(
   },
 );
 
+export const bankAccounts = pgTable(
+  "bank_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    country: text("country").notNull(),
+    currency: text("currency").notNull(),
+    swiftBic: text("swift_bic").notNull(),
+    accountNumber: text("account_number").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => {
+    return [
+      index("bank_accounts_user_id_idx").on(table.userId),
+    ];
+  },
+);
 
 export const usersRelations = relations(users, ({ many }) => ({
   emailVerifications: many(emailVerifications),
@@ -235,6 +255,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sentGifts: many(gifts, { relationName: "sentGifts" }),
   receivedGifts: many(gifts, { relationName: "receivedGifts" }),
   wallets: many(wallets),
+  bankAccounts: many(bankAccounts),
   notifications: many(notifications),
 }));
 
@@ -285,6 +306,13 @@ export const walletsRelations = relations(wallets, ({ one }) => ({
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
     fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const bankAccountsRelations = relations(bankAccounts, ({ one }) => ({
+  user: one(users, {
+    fields: [bankAccounts.userId],
     references: [users.id],
   }),
 }));

@@ -21,6 +21,7 @@ const PROTECTED_API_ROUTES = [
   "/api/auth/revoke",
   "/api/gifts",
   "/api/dashboard",
+  "/api/wallet",
 ];
 
 const AUTH_RATE_LIMIT = 100;
